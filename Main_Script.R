@@ -28,7 +28,6 @@ library(forcats)
 
 # --------------------------------------------------- DIRECTORIES ---------------------------------------------------
 
-setwd("C:/Users/pgcar/Google Drive/Paul Carvalho/dissertation/chapter 4/model") # PC
 # setwd("~/Google Drive/grad students/Paul Carvalho/dissertation/chapter 4/model")  # AH
 
 # --------------------------------------------------- MODEL PARAMETERS ---------------------------------------------------
