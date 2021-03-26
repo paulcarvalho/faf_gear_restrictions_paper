@@ -44,3 +44,24 @@ calc_phi <- function(L.lower, L.upper, Linf, k, nsc){
   }
   return(list(tij, phi_min))
 }
+
+calc_growth <- function(N, phi, nsc, nspecies){
+  #' calc_growth
+  #'
+  #' @description Calculate the number of fish that grow to next size class. Adopted from Hall et al. (2006).
+  #'
+  #' @param N Matrix with number of fish in size class j (row) and functional group i (col)
+  #' @param phi Proportion of fish in size class j and functional group i that grow to the next size class 
+  #' @param nsc Number of size classes
+  #' @param nspecies Number of functional groups, or species, included in the model
+  #'
+  #' @return New abundance matrix (size class = row, functional group = col) after fish growth
+  
+  stay <- N * (1-phi) 
+  leave <- N * phi
+  N.out <- stay + rbind(pracma::zeros(1, nspecies),leave[1:nsc-1,])
+  return(N.out)
+}
+
+
+

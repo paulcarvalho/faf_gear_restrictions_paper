@@ -85,9 +85,6 @@ phi.out <- calc_phi(L.lower, L.upper, Linf, k, nsc)
 phi     <- phi.out[[1]] # prop of fish that grow to next size class
 phi.min <- phi.out[[2]] # length of a timestep (years)
 
-# calculate growth
-source("calc_growth.R")
-
 # calculate ration
 source("calc_ration.R")
 ration_out <- calc_ration(k, Linf, nsc, nspecies, L.lower, L.upper, L.mid, W.a, W.b, phi.min, scale.Ge = 0)
