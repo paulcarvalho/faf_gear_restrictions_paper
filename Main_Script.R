@@ -98,7 +98,6 @@ M2_prefs <- calc_prefs(L.mid, nsc, nspecies, mu, sigma, weight, sc_Linf)
 suit <- calc_suit(M2_prefs, tau, nsc, nspecies, sc_Linf)
 
 # natural mortality rate (M1)
-source("nat_mortality.R")
 M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # natural mortality (excluding predation)
 
 # calculate product of size selectivity and catchability
