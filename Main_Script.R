@@ -97,9 +97,6 @@ M2_prefs <- calc_prefs(L.mid, nsc, nspecies, mu, sigma, weight, sc_Linf)
 # calculate suitabilities for pred and prey
 suit <- calc_suit(M2_prefs, tau, nsc, nspecies, sc_Linf)
 
-# calculate the predation mortality
-source("calc_M2.R")
-
 # natural mortality rate (M1)
 source("nat_mortality.R")
 M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # natural mortality (excluding predation)

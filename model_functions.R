@@ -194,3 +194,41 @@ calc_suit <- function(M2_prefs, tau, nsc, nspecies, sc_Linf){
   }
   return(suit)
 }
+
+calc_M2 <- function(N, suit, ration, nspecies, nsc, other, weight, sc_Linf, phi.min){
+  #' calc_M2
+  #' 
+  #' @description Calculate the predation mortality (M2) for each functional group in each size class.
+  #' Code adapted from Hall et al. (2006).
+  #'
+  #' @param N Abundance for size class j (rows) and functional group i (cols)
+  #' @param suit Functional group-size class specific suitability of prey for predators
+  #' @param ration Ingestion rate that accounts for fish growth
+  #' @param nspecies Number of functional groups, or species
+  #' @param nsc Number of size classes
+  #' @param other Other food items that are not explicitly represented in the model
+  #' @param weight Weight of each functional group and size class
+  #' @param sc_Linf Size class at asymptotic length
+  #' @param phi.min Time step scalar
+  #'
+  #' @return Matrix (size class = rows, functional group = cols) with predation mortality
+  
+  M2 <- matrix(0, nrow=nsc, ncol=nspecies)
+  
+  for(n in 1:nspecies){         # prey species
+    for(m in 1:sc_Linf[n]){     # prey size class
+      for(j in 1:nspecies){     # predator species
+        for(i in 1:sc_Linf[j]){ # predator size class
+          denom <- sum(suit[i,j,,] * weight * N) # denominator in equation 8 of Hall et al. (2006)
+          denom <- denom + other
+          if(denom > 0){
+            M2[m,n] <- M2[m,n] + ration[i,j] * N[i,j] * (suit[i,j,m,n] / denom) # equation 8 of Hall et al. (2006)
+          }
+        }
+      }
+    }
+  }
+  
+  output1 <- M2*phi.min # scale predation mortality to minimum time step (phi.min)
+  return(output1)
+}
