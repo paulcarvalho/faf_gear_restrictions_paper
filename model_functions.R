@@ -140,7 +140,7 @@ calc_prefs <- function(L.mid, nsc, nspecies, mu, sigma, weight, sc_Linf){
   #' @param weight Weight
   #' @param sc_Linf Size class at asymptotic length
   #'
-  #' @return Four-dimensional array with preferencse for predator i in size class j and prey species l in size class k
+  #' @return Four-dimensional array with preferences for predator i in size class j and prey species l in size class k
   bs.ratio <- zeros(nsc, nspecies, nsc, nspecies)
   
   for(sp1 in 1:nspecies){ # predator species
@@ -155,4 +155,42 @@ calc_prefs <- function(L.mid, nsc, nspecies, mu, sigma, weight, sc_Linf){
   }
   
   return(bs.ratio)
+}
+
+calc_suit <- function(M2_prefs, tau, nsc, nspecies, sc_Linf){
+  #' calc_suit
+  #'
+  #' @description Calculate the suitabilities for predator of size l, functional group k 
+  #' for prey of size j, functional group i. Code adapted from Hall et al. (2006).
+  #'
+  #' @param M2_prefs Functional group and size class specific predator preferenes for prey
+  #' @param tau Foodweb matrix
+  #' @param nsc Number of size classes
+  #' @param nspecies Number of functional groups, or species
+  #' @param sc_Linf Size class at asymptotic length for each functional group
+  #'
+  #' @return Four-dimensional matrix with suitabilities for predator and prey
+  
+  suit <- zeros(nsc, nspecies, nsc, nspecies)
+  
+  for(i in 1:nspecies){ # prey species
+    for(j in 1:nsc){    # prey size class
+      for(l in 1:nsc){  # predator size class
+        suit[l,,j,i] <- M2_prefs[l,,j,i] * tau[,i] # equation 8.1 in Hall et al. (2006)
+      }
+    }
+  }
+  
+  # standardize such that suitabilities sum to one
+  # if the species is not a predator of anything, denom is zero
+  denom <- matrix(NA, nsc, nspecies)
+  for(sp1 in 1:nspecies){
+    for(sc1 in 1:nsc){
+      denom[sc1, sp1] <- sum(sum(suit[sc1,sp1,,]))
+      if(denom[sc1, sp1] > 0){
+        suit[sc1,sp1,,] <- suit[sc1,sp1,,] / denom[sc1, sp1]
+      }
+    }
+  }
+  return(suit)
 }
