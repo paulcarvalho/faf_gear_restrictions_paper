@@ -86,14 +86,12 @@ phi     <- phi.out[[1]] # prop of fish that grow to next size class
 phi.min <- phi.out[[2]] # length of a timestep (years)
 
 # calculate ration
-source("calc_ration.R")
 ration_out <- calc_ration(k, Linf, nsc, nspecies, L.lower, L.upper, L.mid, W.a, W.b, phi.min, scale.Ge = 0)
 ration     <- ration_out[[1]]
 weight     <- ration_out[[2]]
 sc_Linf    <- ration_out[[3]]
 
 # calculate size ratio based on preference parameters
-source("calc_prefs.R")
 M2_prefs <- calc_prefs(L.mid, nsc, nspecies, mu, sigma, weight, sc_Linf)
 
 # calculate suitabilities for pred and prey
