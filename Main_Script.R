@@ -1,4 +1,4 @@
-# ------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------
 ## File 'Main_Script.R'
 ## Gear-based fisheries population model
 ##
@@ -13,7 +13,7 @@
 # Clean workspace
 rm(list = ls())
 
-# --------------------------------------------------- LIBRARIES ---------------------------------------------------
+# --------------------------------------------------- LIBRARIES and DATA ---------------------------------------------------
 
 library(readxl)
 library(pracma)
@@ -25,56 +25,62 @@ library(ggstance)
 library(ggpubr)
 library(fishualize)
 library(forcats)
+library(fitdistrplus)
+library(plotrix)
+library(tidyverse)
+library(splitstackshape)
+library(data.table)
+library(docstring)
+library(roxygen2)
 
-# --------------------------------------------------- DIRECTORIES ---------------------------------------------------
+# Load data 
+landings  <- read.csv("landings.csv") # fisheries-dependent data
+uvc       <- read.csv("uvc.csv") # fisheries-independent data
+LH.params <- read_xlsx("model_params.xlsx", sheet = 1) # life history parameters
+foodweb   <- read_xlsx("model_params.xlsx", sheet = 2) # food web matrix
 
-# setwd("~/Google Drive/grad students/Paul Carvalho/dissertation/chapter 4/model")  # AH
-
-# --------------------------------------------------- MODEL PARAMETERS ---------------------------------------------------
-
-t <- 200      # number of timesteps
+# --------------------------------------------------- MODEL PARAMETERS -----------------------------------------------------
+t        <- 200 # number of timesteps
 nspecies <- 9 # number of species/functional groups
-nsc <- 11     # number of size classes
+nsc      <- 11 # number of size classes
 
 # life-history parameters
-LH.params <- read_xlsx("model_params.xlsx", sheet = 1)
-k <- LH.params$k       # instantaneous growth parameters of the von Bertalanffy growth equation
-Linf <- LH.params$Linf # asymptotic length parameters of the von Bertalanffy growth equation
-W.a <- LH.params$W_a   # intercept parameters of length-weight relationship
-W.b <- LH.params$W_b   # slope parameters of length-weight relationship
-Lmin <- LH.params$Lmin # minimum sizes in centimeters
-Lmax <- LH.params$Lmax # maximum sizes in centimeters
-Lmat <- LH.params$Lmat # length at maturity
+k         <- LH.params$k # instantaneous growth parameters of the von Bertalanffy growth equation
+Linf      <- LH.params$Linf # asymptotic length parameters of the von Bertalanffy growth equation
+W.a       <- LH.params$W_a # intercept parameters of length-weight relationship
+W.b       <- LH.params$W_b # slope parameters of length-weight relationship
+Lmin      <- LH.params$Lmin # minimum sizes in centimeters
+Lmax      <- LH.params$Lmax # maximum sizes in centimeters
+Lmat      <- LH.params$Lmat # length at maturity
 
-# get the lower and upper limits of size classes
+# lower and upper limits of size classes
 maxsize <- max(Linf) # max Linf
 minsize <- min(Lmin) # min fish size
 L.lower <- seq(from = minsize, to = maxsize - (maxsize-minsize)/nsc, length.out = nsc)   # lower limit (included in the size class)
 L.upper <- seq(from = minsize + ((maxsize-minsize)/nsc), to = maxsize, length.out = nsc) # upper limit (excluded)
-L.mid <- L.lower + (L.upper - L.lower)/2 # mid-point of each size class
+L.mid   <- L.lower + (L.upper - L.lower)/2 # mid-point of each size class
 
 # Beverton-Holt
 h <- Lmat/Linf # dimensionless steepness parameter for Beverton-Holt stock-recruitment relationship
 
 # Food web matrix
-foodweb <- read_xlsx("model_params.xlsx", sheet = 2)
-tau <- as.matrix(foodweb[,c(2:10)]) # Foodweb matrix. Columns indicate predator species, rows indicate prey species, and 1 indicates prey consumed by predators
+tau     <- as.matrix(foodweb[,c(2:10)]) # Foodweb matrix. Columns indicate predator species, rows indicate prey species, and 1 indicates prey consumed by predators
 other.i <- 5e7
 
 # Parameters for predator size preference function
 mu    <- -3.5 # mean for lognormal function
 sigma <- 1    # sd for lognormal function
 
-# Size selectvity and functional group catchability
-# see Carvalho et al. 2020 for 'qs_[gear]' calculations (file - 'selectivity_index.R')
-size_sel <- read_xlsx("model_params.xlsx", sheet = 3)
-fg_cat <- read_xlsx("model_params.xlsx", sheet = 4)
-
+# # Size selectvity and functional group catchability
+# # see Carvalho et al. 2020 for 'qs_[gear]' calculations (file - 'selectivity_index.R')
+# size_sel <- read_xlsx("model_params.xlsx", sheet = 3)
+# fg_cat   <- read_xlsx("model_params.xlsx", sheet = 4)
 
 # --------------------------------------------------- MODEL IMPLEMENTATION ---------------------------------------------------
 
+source('model_functions.R')
+
 # determine proportion of fish that grow to the next size class
-source("calc_phi.R")
 phi.out <- calc_phi(L.lower, L.upper, Linf, k, nsc) 
 phi     <- phi.out[[1]] # prop of fish that grow to next size class
 phi.min <- phi.out[[2]] # length of a timestep (years)

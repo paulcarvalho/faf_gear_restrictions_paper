@@ -12,3 +12,6 @@ mean-fig4b_Campbell etal 2020.csv
 model_params.xlsx
 new_species_key.csv
 uvc_key.csv
+model_data.RData
+uvc.csv
+landings.csv
