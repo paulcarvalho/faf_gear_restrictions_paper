@@ -104,23 +104,7 @@ M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # 
 q <- bootstrap_qs(landings, uvc, resample = FALSE)
 q <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
 
-# fishing mortlaity rate
-source("F_mortality.R")
 
-# calculate total catch
-source("calc_catch.R")
-
-# calculate biomass
-source("calc_bio.R")
-
-# calc proportion of biomass in each functional group
-source("calc_propFG.R")
-
-# calc proportion of fish in the smallest two size classes and biomass or catch for each functional group
-source("calc_fgsize_output.R")
-
-# calibrate recruitment
-source("cal_recruitment.R")
 
 # run fisheries model
 source("run_model.R")

@@ -460,3 +460,195 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   
   return(list(F_hook, F_net, F_spear))  
 }
+
+F_mortality <- function(nsc, nspecies, fishing.effort, gear.mgmt, q){
+  #' F_mortality
+  #'
+  #' @description Calculate fishing mortality for each gear.
+  #'
+  #' @param nsc Number of size classes
+  #' @param nspecies Number of functional groups, or species
+  #' @param fishing.effort Total fishing effort (arbitrary value)
+  #' @param gear.mgmt Management strategy to simulate
+  #' @param q Product of catchability and selectivity for each gear type
+  #'
+  #' @return Fishing mortalities
+  
+  F.tmp <- array(NA, dim = c(nsc, nspecies, length(gear.mgmt))) # empty shell for fishing mortality of each fishing gear
+  F.out <- array(0, dim = c(nsc, nspecies))
+  # set up gear management scenario
+  q.tmp <- array(NA, dim = c(nsc, nspecies, length(gear.mgmt)))
+  for(i in 1:length(gear.mgmt)){
+    if(gear.mgmt[i] == 1){
+      q.tmp[,,i] <- q[,,i]/sum(q[,,i]) # assign catchability/selectivity and scale such that qs for all sums to one
+    } else {
+      q.tmp[,,i] <- 0
+    }
+  }
+  # calculate fishing mortality
+  for(i in 1:length(gear.mgmt)){
+    F.tmp[,,i] <- fishing.effort[i] * q.tmp[,,i]
+    F.out      <- F.out + F.tmp[,,i]
+  }
+  return(F.out) # I don't think necessary to scale with time step
+}
+
+calc_catch <- function(N, F.mort){
+  #' calc_catch
+  #'
+  #' @description Calculate the catch in numbers.
+  #'
+  #' @param N Abundance of each functional group, or species, in each siez class
+  #' @param F.mort Fishing mortliaty
+  #'
+  #' @return Total catch
+  
+  tot.catch <- N * (1 - exp(-F.mort)) # calculate F mortality
+  # Mathimatically the following won't occur, but this was added for old calculation of fishing mortliaty and kept
+  if(sum(c(N - tot.catch) < 0) > 0) stop("Error: catch for one or more species-size class combinations exceeds limit")
+  return(tot.catch)
+}
+
+calc_bio <- function(N, t, L.lower, L.upper, W.a, W.b, nsc, nspecies){
+  #' calc_bio
+  #'
+  #' @description Convert length to biomass using the midpoint of each size class.
+  #'
+  #' @param N Abundance of each functional group and size class 
+  #' @param t Number of timesteps
+  #' @param L.lower Lower limit of each size class
+  #' @param L.upper Upper limit of each size class
+  #' @param W.a Length-weight conversion parameter
+  #' @param W.b Length-weight conversion parameter
+  #' @param nsc Number of size classes
+  #' @param nspecies Number of functional groups, or species
+  #'
+  #' @return Biomass of each functional group and size class
+  
+  # Save N as an array if it's a matrix
+  if(t == 1){ N <- array(N, dim=c(nsc,nspecies,t)) }
+  # calculate midpoint of each size class
+  Lmid       <- (L.lower + L.upper) / 2
+  Lmid.mat   <- pracma::repmat(as.matrix(Lmid), 1, nspecies)     
+  Lmid.array <- array(Lmid.mat, dim=c(nsc,nspecies,t))
+  # create matrices for params
+  wa.mat   <- pracma::repmat(t(as.matrix(W.a)), nsc, 1)
+  wa.array <- array(wa.mat, dim=c(nsc,nspecies,t))
+  wb.mat   <- pracma::repmat(t(as.matrix(W.b)), nsc, 1)
+  wb.array <- array(wb.mat, dim=c(nsc,nspecies,t))
+  # calculate biomass (kg)
+  N.out <- N * ((wa.array*Lmid.array^wb.array) / 1000)
+  return(N.out)
+}
+
+calc_propFG <- function(N_bio){
+  #' calc_propFG
+  #'
+  #' @description Calculate the proportion of biomass in each functional group, or species
+  #'
+  #' @param N_bio Biomass in each functional group and size class
+  #'
+  #' @return Proportion of total biomass in each functional group
+  sum_bio  <- colSums(N_bio)
+  prop_bio <- sum_bio / sum(sum_bio)
+  return(prop_bio)
+}
+
+calc_fgsize_output <- function(X, effort, total.effort, nsc, nspecies){
+  #' calc_fgsize_output
+  #' 
+  #' @description Calculate the biomass or catch and size distribution for each functional group and effort combination.
+  #'
+  #' @param X Biomass or catch
+  #' @param effort Range of fishing effort
+  #' @param total.effort Total fishing effort
+  #' @param nsc Number of size classes
+  #' @param nspecies Number of functional groups, or species
+  #'
+  #' @return Proportion of fish in each size class for each functional group
+  
+  # empty dataframes for saving data
+  out.df  <- data.frame(fg = as.character(), E = as.numeric(), V = as.numeric(), V.rel = as.numeric(), sizedist = as.numeric())
+  out.df2 <- data.frame(E = as.numeric(), V = as.numeric())
+  func.groups <- c("Browser","Detritivore","Excavator/scraper","Grazer","Macro-invertivore","Micro-invertivore","Pisci-invertivore","Piscivore","Planktivore")
+  for(i in 1:length(effort)){
+    effort.tmp <- rep((effort[i] / total.effort), nspecies)
+    X.tmp      <- X[,,i]
+    # calculate proportions in each size class
+    X.sum  <- repmat(t(as.matrix(colSums(X.tmp))), nsc, 1)
+    X.prop <- X.tmp / X.sum
+    # get only proportion in the smallest two size classes, that is
+    # the size class of recruits and smallest size class exposed to fishing
+    X.prop <- colSums(X.prop[1:2,])
+    # calculate total biomass
+    V.tmp  <- colSums(X.tmp)
+    V2.tmp <- sum(V.tmp)
+    # calculate relative biomass for each functional group
+    V.rel.tmp <- V.tmp / sum(V.tmp)
+    # save all data
+    out.tmp  <- data.frame(fg=func.groups, E = effort.tmp, V = V.tmp, V.rel = V.rel.tmp, sizedist = X.prop)
+    out.tmp2 <- data.frame(E = effort.tmp[1], V = V2.tmp)
+    # combine with other data
+    out.df  <- rbind(out.df, out.tmp)
+    out.df2 <- rbind(out.df2, out.tmp2)
+  }
+  return(list(out.df, out.df2))
+}
+
+cal_recruitment <- function(par.in, N0, t, nsc, nspecies, M1, phi, L.lower, L.upper, W.a, W.b, Bi.F0, suit, ration, weight, sc_Linf, phi.min){
+  #' calc_recruitment
+  #' 
+  #' @description Calibrate recruitment such that biomass of each functional group, or species, reaches biomass/ha
+  #' in remote areas of Indonesia (Campbell et al. 2020). The main script calls this function within optim to find
+  #' recruitment that minimizes sum of squared residuals.
+  #'
+  #' @param par.in (1) recruitment rate and (2) other food items
+  #' @param N0 Initial starting population
+  #' @param t Number of timesteps
+  #' @param nsc Number of size classes
+  #' @param nspecies Number of functional gropus, or species
+  #' @param M1 Natural mortality
+  #' @param phi Proportion of fish in size class j and functional group i that grow to the next size class
+  #' @param L.lower Lower limit of each size class (cm)
+  #' @param L.upper Upper limit of each size class (cm)
+  #' @param W.a Length-weight conversion parameter
+  #' @param W.b Length-weight conversion parameter
+  #' @param Bi.F0 Expected pristine biomass (i.e., at zero fishing effort)
+  #' @param suit Suitability of prey for predators
+  #' @param ration Ration that must be consumed to account for growth
+  #' @param weight Weight of each functional group and size class
+  #' @param sc_Linf Size class at asymptotic length
+  #' @param phi.min Minimum timestep
+  #'
+  #' @return Residuals of expected pristine biomass and model biomass at the last timestep
+  
+  r.i   <- par.in[1:9]
+  other <- par.in[10]
+  N.ijt <- array(NA, dim = c(nsc, nspecies, t)) # empty shell to save data
+  N.ijt[,,1] <- N0 # set initial abundance
+  # run model
+  for(i in 2:t){
+    # recruitment
+    N.tmp     <- N.ijt[,,i-1]
+    N.tmp[1,] <- N.tmp[1,] + r.i
+    # calculate predation mortality
+    M2 <- calc_M2(N=N.tmp, suit, ration, nspecies, nsc, other, weight, sc_Linf, phi.min)
+    # natural mortality
+    N.tmp <- N.tmp * exp(-(M1+M2))
+    # grow
+    N.tmp <- calc_growth(N.tmp, phi, nsc, nspecies)
+    # NO fishing mortality for model calibration
+    N.ijt[,,i] <- N.tmp
+  }
+  # calculate biomass at equilibrium
+  B.ijt <- calc_bio(N.ijt, t, L.lower, L.upper, W.a, W.b, nsc, nspecies)
+  B.end <- colSums(B.ijt[,,t])
+  # calculate residual difference between model and expected
+  residual <- log(B.end)-log(Bi.F0)
+  # sum squared residuals
+  res.out <- sum(residual^2)
+  return(res.out)
+}
+
+
+
