@@ -100,12 +100,9 @@ suit <- calc_suit(M2_prefs, tau, nsc, nspecies, sc_Linf)
 # natural mortality rate (M1)
 M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # natural mortality (excluding predation)
 
-# calculate product of size selectivity and catchability
-source("calc_qs.R")
-q      <- array(NA, dim = c(nsc, nspecies, 3)) # create 3D array with size classes (rows), species (functional groups; cols), and gear types.
-q[,,1] <- calc_qs(L.mid, size_sel$mu[1], size_sel$sd[1], fg_cat$q_line)  # hook and line
-q[,,2] <- calc_qs(L.mid, size_sel$mu[2], size_sel$sd[2], fg_cat$q_net)   # net
-q[,,3] <- calc_qs(L.mid, size_sel$mu[3], size_sel$sd[3], fg_cat$q_spear) # spear
+# bootstrap (resample) landings and uvc data to quantify uncertainty in catchability and selectivity
+q <- bootstrap_qs(landings, uvc, resample = FALSE)
+q <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
 
 # fishing mortlaity rate
 source("F_mortality.R")
