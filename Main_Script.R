@@ -105,7 +105,6 @@ q <- bootstrap_qs(landings, uvc, resample = FALSE)
 q <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
 
 
-
 # run fisheries model
 source("run_model.R")
 
