@@ -104,35 +104,15 @@ M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # 
 q <- bootstrap_qs(landings, uvc, resample = FALSE)
 q <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
 
-
 # run fisheries model
 source("run_model.R")
 
-# run sensitivity analysis
-source("sensitivity.R")
 
-# calculate spawing stock biomass
-source("calc_ssb.R")
-
-# calculate indicators for sensitivity analysis
-source("calc_sensitivity_indices.R")
-  
-# Calculate summary for model outputs
-source("calc_summary_indices.R")
-
-# Estimate size spectra
-# NOTE: this code is not used in the main model, but can be used for a sensitivity analysis
-#       by obtaining empirical estimates of length spectra. 
-# est.size.spec.env <- new.env()
-# source("estimate_size_spectra.R", est.size.spec.env)
-# est.size.spec.env$`func_group`.input = # list where [[1]] empirical sizes [[2]] log.size [[3]] sum.log.size [[4]] min.size [[5]] max.size
-# est.size.spec.env$`func_group`.out = list where [[1]] b [[2]] CI 
-
-# Calculate the mean abundance per hectare for each functional group
-mean.abundance.env <- new.env(parent = .BaseNamespaceEnv)
-source("mean_abundance.R", mean.abundance.env)
-
-# Use power-law density function to simulate initial size distribution
+# # Calculate the mean abundance per hectare for each functional group
+# mean.abundance.env <- new.env(parent = .BaseNamespaceEnv)
+# source("mean_abundance.R", mean.abundance.env)
+# 
+# # Use power-law density function to simulate initial size distribution
 size.dist.env <- new.env(parent = .BaseNamespaceEnv)
 source("size_dist.R", size.dist.env)
 N0 <- size.dist.env$N0 # rownames indicate lower limit (included) of size class
@@ -141,15 +121,10 @@ N0 <- round(N0/5)
 # --------------------------------------------------- CALIBRATE RECRUITMENT ---------------------------------------------------
 
 # order: browser, detritivore, excavator/scraper, grazer, macro-invertivore, micro-invertivore, pisci-invertivore, piscivore, planktivore
-bio.exp <- c(47, 87, 47, 47, 102, 102, 45, 45, 1067) # expected biomass/hectare in the absence of fishing
-                                                     # value calculated from Campbell et al. (2020) and within range reported in MacNeil et al. (2015)
-
-r.i <- c(169, 1525, 232, 284, 2211, 995, 35, 70, 6832) # initial estimate for recruits (values set equal to optimization)
-
-Ntest <- matrix(1, nsc, nspecies)
-
-# optimize recruitment and food 'other' to achieve expected biomass of each functional group in the absence of fishing.
-par.in <- c(r.i, other.i)
+bio.exp <- c(47, 87, 47, 47, 102, 102, 45, 45, 1067) # expected biomass/hectare in the absence of fishing; value calculated from Campbell et al. (2020) and within range reported in MacNeil et al. (2015)
+r.i     <- c(169, 1525, 232, 284, 2211, 995, 35, 70, 6832) # initial estimate for recruits (values set equal to optimization)
+Ntest   <- matrix(1, nsc, nspecies)
+par.in  <- c(r.i, other.i) # optimize recruitment and food 'other' to achieve expected biomass of each functional group in the absence of fishing.
 
 # ptm<-proc.time()
 # r.fit <- optim(par=par.in, fn=cal_recruitment, N0=Ntest, t=t, nsc=nsc, nspecies=nspecies,
@@ -157,10 +132,10 @@ par.in <- c(r.i, other.i)
 # 						   suit=suit, ration=ration, weight=weight, sc_Linf=sc_Linf, phi.min=phi.min,
 #             	 control = list(maxit = 8000))
 # proc.time()-ptm
-
 # r <- r.fit$par[1:9] # c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
-r <- c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
 # other <- r.fit$par[10] # 55003764
+
+r <- c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
 other <- 55003764
 alpha_beta <- r # asymptote of BH srr
 

@@ -650,5 +650,132 @@ cal_recruitment <- function(par.in, N0, t, nsc, nspecies, M1, phi, L.lower, L.up
   return(res.out)
 }
 
+calc_ssb <- function(nspecies, nsc, L.lower, L.upper, N.ijt, y, Lmat){
+  #' calc_ssb
+  #' 
+  #' @description Calculate the spawning stock biomass for each functional group, or species.
+  #'
+  #' @param nspecies Number of functional groups, or species
+  #' @param nsc Number of size classes
+  #' @param L.lower Lower limit of size class (cm)
+  #' @param L.upper Upper limit of size class (cm)
+  #' @param N.ijt Abundance for each functional group in each size class for all timesteps
+  #' @param y Year index
+  #' @param Lmat Length at maturity 
+  #'
+  #' @return Spawning stock biomass of each functional group
+  
+  # calc spawning stock biomass
+  ssb <- vector("numeric", length = nspecies)
+  for(x in 1:nspecies){
+    stock <- NULL
+    for(z in 1:nsc){
+      tmp_stock <- data.frame(size = seq(L.lower[z]+1,L.upper[z],by=1), stock = N.ijt[z,x,y-1]/5)
+      stock     <- rbind(stock, tmp_stock)
+    }
+    ssb[x] <- sum(subset(stock, size >= Lmat[x])$stock)
+  }   
+  return(ssb)
+}
 
+calc_sensitivity_indices <- function(N.ijte, B.ijte, cN.ijte, cB.ijte, L.mid, Lmat, tau, base.effort){
+  #' calc_sensitivity_indices
+  #' 
+  #' @description Calculate indicators for sensitiviy to model parameters
+  #'
+  #' @param N.ijte Abundance
+  #' @param B.ijte Biomass
+  #' @param cN.ijte Catch in numbers
+  #' @param cB.ijte Catch in biomass
+  #' @param L.mid Midpoint of each size class
+  #' @param Lmat Length at maturity
+  #' @param tau Food web matrix
+  #' @param base.effort Original fishing effort 
+  #'
+  #' @return Dataframe with effort, biomass, catch in biomass, biomass size distribution, and catch size distribution
+  
+  # Calculate total biomass at equilibrium for all efforts
+  B.equil <- colSums(colSums(B.ijte[,,t,]))
+  # Calculate total catch at equilibrium for all efforts
+  cB.equil <- colSums(colSums(cB.ijte[,,t,]))
+  # Calculate mean length of stock and catch
+  BmeanL <- vector(mode="numeric", length=length(effort))
+  CmeanL <- vector(mode="numeric", length=length(effort))
+  for(e in 1:length(base.effort)){
+    totalN    <- sum(N.ijte[,,t,e])
+    totalL    <- sum(rowSums(N.ijte[,,t,e]) * L.mid)
+    BmeanL[e] <- totalL/totalN
+    totalcN   <- sum(cN.ijte[,,t,e])
+    totalcL   <- sum(rowSums(cN.ijte[,,t,e]) * L.mid)
+    CmeanL[e] <- totalcL/totalcN
+  }
+  # Create dataframe
+  si.df <- data.frame(effort = base.effort, B = B.equil, cB = cB.equil, BmeanL = BmeanL, CmeanL = CmeanL)
+  # Find values at 0.5B0
+  si.df <- si.df %>% mutate(sq.diff = (B - (max(B)/2))^2)
+  out   <- si.df[which(si.df$sq.diff == min(si.df$sq.diff)),]
+  return(out)
+}
+
+calc_summary_indices <- function(N.ijte, B.ijte, cN.ijte, cB.ijte, t, L.mid, Lmat, nspecies){
+  #' calc_summary_indices
+  #' 
+  #' @description Calculate summary for model outputs
+  #'
+  #' @param N.ijte Abundance
+  #' @param B.ijte Biomass
+  #' @param cN.ijte Catch in numbers
+  #' @param cB.ijte Catch in biomass
+  #' @param t Number of timesteps
+  #' @param L.mid Midpoint of size classes
+  #' @param Lmat Length at maturity
+  #' @param nspecies Number of functional groups, or species
+  #'
+  #' @return List with (1) total biomass, (2) total catch biomass, (3) biomass of each functional group, (4) catch biomass of each functional group,
+  #' (5) mean weight, (6) mean length, (7) mean biomass at length at maturity, (8) mean weight of catch, (9) and mean length of catch
+  
+  B.equil    <- colSums(colSums(B.ijte[,,t,])) # Calculate total biomass at equilibrium for all efforts
+  cB.equil   <- colSums(colSums(cB.ijte[,,t,])) # Calculate total catch at equilibrium for all efforts
+  Bfg.equil  <- colSums(B.ijte[,,t,]) # Calculate biomass for each functional group at equilibrium for all efforts
+  cBfg.equil <- colSums(cB.ijte[,,t,]) # Calculate catch for each functional group at equilibrium for all efforts
+  # Calculate mean weight. length and length at maturity
+  BmeanW    <- vector(mode="numeric", length=length(effort))
+  BmeanL    <- vector(mode="numeric", length=length(effort))
+  BmeanLmat <- vector(mode="numeric", length=length(effort))
+  CmeanW    <- vector(mode="numeric", length=length(effort))
+  CmeanL    <- vector(mode="numeric", length=length(effort))
+  for(e in 1:length(effort)){
+    totalB       <- sum(B.ijte[,,t,e])
+    totalN       <- sum(N.ijte[,,t,e])
+    totalL       <- sum(rowSums(N.ijte[,,t,e]) * L.mid)
+    BmeanW[e]    <- totalB/totalN
+    BmeanL[e]    <- totalL/totalN
+    BmeanLmat[e] <- sum(colSums(N.ijte[,,t,e]) * Lmat) / totalN
+    totalcB      <- sum(cB.ijte[,,t,e])
+    totalcN      <- sum(cN.ijte[,,t,e])
+    totalcL      <- sum(rowSums(cN.ijte[,,t,e]) * L.mid)
+    CmeanW[e]    <- totalcB/totalcN
+    CmeanL[e]    <- totalcL/totalcN
+  }
+  # Calculate functional group specific mean weight, length, and length at maturity
+  fg.BmeanW    <- array(NA, dim=c(1,nspecies,length(effort)))
+  fg.BmeanL    <- array(NA, dim=c(1,nspecies,length(effort)))
+  fg.BmeanLmat <- array(NA, dim=c(1,nspecies,length(effort)))
+  fg.CmeanW    <- array(NA, dim=c(1,nspecies,length(effort)))
+  fg.CmeanL    <- array(NA, dim=c(1,nspecies,length(effort)))
+  for(e in 1:length(effort)){
+    fg.totalB <- colSums(B.ijte[,,t,e])
+    fg.totalN <- colSums(N.ijte[,,t,e])
+    fg.totalL <- colSums(N.ijte[,,t,e] * repmat(as.array(L.mid),1,nspecies))
+    fg.BmeanW[,,e]    <- fg.totalB / fg.totalN
+    fg.BmeanL[,,e]    <- fg.totalL / fg.totalN
+    fg.BmeanLmat[,,e] <- (colSums(N.ijte[,,t,e]) * Lmat) / fg.totalN
+    fg.totalcB <- colSums(cB.ijte[,,t,e])
+    fg.totalcN <- colSums(cN.ijte[,,t,e])
+    fg.totalcL <- colSums(cN.ijte[,,t,e] * repmat(as.array(L.mid),1,nspecies))
+    fg.CmeanW[,,e] <- fg.totalcB/fg.totalcN
+    fg.CmeanL[,,e] <- fg.totalcL/fg.totalcN
+  }
+  out <- list(B.equil,cB.equil,Bfg.equil,cBfg.equil,BmeanW,BmeanL,BmeanLmat,CmeanW,CmeanL,fg.BmeanW,fg.BmeanL,fg.BmeanLmat,fg.CmeanW,fg.CmeanL)
+}
 
