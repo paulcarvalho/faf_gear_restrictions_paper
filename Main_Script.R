@@ -173,87 +173,43 @@ ggplot() + geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1
 
 # --------------------------------------------------- MODEL SETTINGS ---------------------------------------------------
 
-# total.effort <- 1400 # 400 for each gear type in this scenario. Parameter to modulate fishing effort, but units are arbitrary
 max.effort <- 29 # maximum effort for each gear type. Units are arbitrary
 effort <- seq(0, 1, length.out = 20) * max.effort # fishing effort to test
 
-
 # --------------------------------------------------- MODEL SCENARIO 1: ALL GEARS ---------------------------------------------------
-
 gear.mgmt.1 <- c(1,1,1) # all gears used
-
-scen.1 <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-										suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.1.out <- calc_summary_indices(N.ijte = scen.1[[1]], B.ijte = scen.1[[2]], cN.ijte = scen.1[[3]], cB.ijte = scen.1[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.1      <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.1.out  <- calc_summary_indices(N.ijte = scen.1[[1]], B.ijte = scen.1[[2]], cN.ijte = scen.1[[3]], cB.ijte = scen.1[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SCENARIO 2: NO LINE FISHING ---------------------------------------------------
-
 gear.mgmt.2 <- c(0,1,1) # No hook-and-line fishing
-
-scen.2 <- run_model(effort, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                    suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.2.out <- calc_summary_indices(N.ijte = scen.2[[1]], B.ijte = scen.2[[2]], cN.ijte = scen.2[[3]], cB.ijte = scen.2[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.2      <- run_model(effort, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.2.out  <- calc_summary_indices(N.ijte = scen.2[[1]], B.ijte = scen.2[[2]], cN.ijte = scen.2[[3]], cB.ijte = scen.2[[4]],  t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SCENARIO 3: NO NET FISHING ---------------------------------------------------
-
 gear.mgmt.3 <- c(1,0,1) # No net fishing
-
-scen.3 <- run_model(effort, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                    suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.3.out <- calc_summary_indices(N.ijte = scen.3[[1]], B.ijte = scen.3[[2]], cN.ijte = scen.3[[3]], cB.ijte = scen.3[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.3      <- run_model(effort, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.3.out  <- calc_summary_indices(N.ijte = scen.3[[1]], B.ijte = scen.3[[2]], cN.ijte = scen.3[[3]], cB.ijte = scen.3[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SCENARIO 4: NO SPEAR FISHING ---------------------------------------------------
-
 gear.mgmt.4 <- c(1,1,0) # No spear fishing
-
-scen.4 <- run_model(effort, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                    suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.4.out <- calc_summary_indices(N.ijte = scen.4[[1]], B.ijte = scen.4[[2]], cN.ijte = scen.4[[3]], cB.ijte = scen.4[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.4      <- run_model(effort, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.4.out  <- calc_summary_indices(N.ijte = scen.4[[1]], B.ijte = scen.4[[2]], cN.ijte = scen.4[[3]], cB.ijte = scen.4[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SCENARIO 5: LINE FISHING ---------------------------------------------------
-
 gear.mgmt.5 <- c(1,0,0) # Only hook-and-line fishing
-
-scen.5 <- run_model(effort, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                    suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.5.out <- calc_summary_indices(N.ijte = scen.5[[1]], B.ijte = scen.5[[2]], cN.ijte = scen.5[[3]], cB.ijte = scen.5[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.5      <- run_model(effort, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.5.out  <- calc_summary_indices(N.ijte = scen.5[[1]], B.ijte = scen.5[[2]], cN.ijte = scen.5[[3]], cB.ijte = scen.5[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SCENARIO 6: NET FISHING ---------------------------------------------------
-
 gear.mgmt.6 <- c(0,1,0) # Only net fishing
-
-scen.6 <- run_model(effort, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                    suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.6.out <- calc_summary_indices(N.ijte = scen.6[[1]], B.ijte = scen.6[[2]], cN.ijte = scen.6[[3]], cB.ijte = scen.6[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.6      <- run_model(effort, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.6.out  <- calc_summary_indices(N.ijte = scen.6[[1]], B.ijte = scen.6[[2]], cN.ijte = scen.6[[3]], cB.ijte = scen.6[[4]],  t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SCENARIO 7: SPEAR FISHING ---------------------------------------------------
-
 gear.mgmt.7 <- c(0,0,1) # Only spear fishing
-
-scen.7 <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                    suit, ration, other, weight, sc_Linf, phi.min)
-
-scen.7.out <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], 
-                                   t, L.mid, Lmat, nspecies)
-
+scen.7 <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.7.out <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SENSITIVITY ANALYSES ---------------------------------------------------
 # First set of sensitivity analyses run simulations with key parameters (i.e., alpha, beta, mu, sigma, Ge, and tau) increased or
@@ -263,7 +219,6 @@ scen.7.out <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], c
 # net mesh size) is proportional to the lognormal mean of size selectivity. We then calculated the lognormal means that indicate
 # 1 and 2 cm increases in hook gape size and net mesh size. Simulations for modified gear specifications were only run with all 
 # fishing gears used simultaneously.
-
 
 # --------------------------------------------------- MODEL SENSITIVITY - NO FISHING ---------------------------------------------------
 
