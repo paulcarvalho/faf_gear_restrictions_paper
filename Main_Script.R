@@ -147,72 +147,29 @@ for(i in 2:t){
         S.ijt[,,i] <- S.tmp
 }
 
-# calculate SSB
-SSB <- calc_bio(S.ijt, t, L.lower, L.upper, W.a, W.b, 1, nspecies)
-
-# get the abundance and biomass for each functional group in the absence of fishing
-Ni.F0 <- colSums(N.ijt[,,1]) # abundance
-N.it <- as.data.frame(t(colSums(N.ijt)))
-N.it <- N.it %>%
-        mutate(time = 1:t) %>%
-        dplyr::select(time, "Browser"=V1,"Detritivore"=V2,"Excavator/scraper"=V3,"Grazer"=V4,"Macro-invertivore"=V5,
-        "Micro-invertivore"=V6,"Pisci-invertivore"=V7,"Piscivore"=V8,"Planktivore"=V9) %>%
-        gather(., "fg", "N", -time)
-
-# calculate biomass
-B.ijt <- calc_bio(N.ijt, t, L.lower, L.upper, W.a, W.b, nsc, nspecies)
-Bi.F0 <- colSums(B.ijt[,,t]) # biomass
-B.it <- as.data.frame(t(colSums(B.ijt)))
-B.it <- B.it %>%
-        mutate(time = 1:t) %>%
-        dplyr::select(time, "Browser"=V1,"Detritivore"=V2,"Excavator/scraper"=V3,"Grazer"=V4,"Macro-invertivore"=V5,
-        "Micro-invertivore"=V6,"Pisci-invertivore"=V7,"Piscivore"=V8,"Planktivore"=V9) %>%
-        gather(., "fg", "B", -time)
-
-# plot 
-# N.it <- N.it  %>% filter(time < 190)
-plot.equil1 <- ggplot() +
-        geom_line(data = N.it, aes(x = time, y = log(N), color = fg), lwd = 1) +
-        labs(y = "log(Abundance)") +
-        scale_y_continuous(limits = c(min(log(N.it$N)),9), expand = c(0,0)) +
-        theme_classic() +
-        guides(color=guide_legend(ncol=3)) +
-        theme(legend.title = element_blank(),
-              legend.position = c(0.5,0.9))
-# B.it <- B.it %>% filter(time < 190)
-plot.equil2 <- ggplot() +
-        geom_line(data = B.it, aes(x = time, y = log(B), color = fg), lwd = 1) +
-        labs(x = "Timesteps", y = "log(Biomass)") +
-        # scale_y_continuous(limits = c(min(log(B.it$B)),8), expand = c(0,0)) +
-        theme_classic() +
-        theme(legend.position = "none")
-        
-ggarrange(plot.equil1, plot.equil2, ncol = 1, nrow = 2, labels = c("A", "B"))
-
 # Parameterize Beverton-Holt model 
-Ro <- r 													 # estimated recruitment at virgin biomass
-Bo <- SSB[,,t]                     # estimated virgin spawning stock biomass
+SSB   <- calc_bio(S.ijt, t, L.lower, L.upper, W.a, W.b, 1, nspecies) # calculate SSB
+Ro    <- r # estimated recruitment at virgin biomass
+Bo    <- SSB[,,t]                     # estimated virgin spawning stock biomass
 alpha <- (Bo/Ro) * ((1-h)/4*h) # Beverton-Holt parameter (1/alpha is the maximum per capita production of recruits)
-beta <- (5*h - 1) / (4*h*Ro)   # Beverton-Holt parameter (R approaches 1/beta as biomass increases)
-
-
-BH.df <- data.frame(fg = rep(c("Browser", "Detritivore", "Excavator/Scraper", "Grazer", 
-                               "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", 
-                               "Piscivore", "Planktivore"), each = 1000),
-                    BHb = rep(seq(1,1000,1), 9),
-                    alpha = rep(alpha, each = 1000),
-                    beta = rep(beta, each = 1000))
+beta  <- (5*h - 1) / (4*h*Ro)   # Beverton-Holt parameter (R approaches 1/beta as biomass increases)
+BH.df <- data.frame(fg = rep(c("Browser", "Detritivore", "Excavator/Scraper", "Grazer", "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", "Piscivore", "Planktivore"), each = 1000), BHb = rep(seq(1,1000,1), 9), alpha = rep(alpha, each = 1000), beta = rep(beta, each = 1000))
 BH.df$BHr <- BH.df$BHb / (BH.df$alpha + BH.df$beta * BH.df$BHb)
-ggplot() +
-  geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1, alpha = 0.8) +
-  labs(x = "Spawning stock biomass", y = "Recruits") +
-  scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7","#000000")) +
-  scale_y_continuous(expand = c(0,0)) +
-  scale_x_continuous(expand = c(0,0)) +
-  theme_classic() +
-  theme(legend.title = element_blank(),
-        legend.position = c(0.9,0.65))
+ggplot() + geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1, alpha = 0.8) + labs(x = "Spawning stock biomass", y = "Recruits") + scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7","#000000")) + scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + theme_classic() + theme(legend.title = element_blank(), legend.position = c(0.9,0.65))
 
+# # get the abundance and biomass for each functional group in the absence of fishing
+# Ni.F0 <- colSums(N.ijt[,,1]) # abundance
+# N.it  <- as.data.frame(t(colSums(N.ijt)))
+# N.it  <- N.it %>% mutate(time = 1:t) %>% dplyr::select(time, "Browser"=V1,"Detritivore"=V2,"Excavator/scraper"=V3,"Grazer"=V4,"Macro-invertivore"=V5, "Micro-invertivore"=V6,"Pisci-invertivore"=V7,"Piscivore"=V8,"Planktivore"=V9) %>% gather(., "fg", "N", -time)
+# # calculate biomass
+# B.ijt <- calc_bio(N.ijt, t, L.lower, L.upper, W.a, W.b, nsc, nspecies)
+# Bi.F0 <- colSums(B.ijt[,,t]) # biomass
+# B.it  <- as.data.frame(t(colSums(B.ijt)))
+# B.it  <- B.it %>% mutate(time = 1:t) %>% dplyr::select(time, "Browser"=V1,"Detritivore"=V2,"Excavator/scraper"=V3,"Grazer"=V4,"Macro-invertivore"=V5, "Micro-invertivore"=V6,"Pisci-invertivore"=V7,"Piscivore"=V8,"Planktivore"=V9) %>% gather(., "fg", "B", -time)
+# # plot 
+# plot.equil1 <- ggplot() + geom_line(data = N.it, aes(x = time, y = log(N), color = fg), lwd = 1) + labs(y = "log(Abundance)") + scale_y_continuous(limits = c(min(log(N.it$N)),9), expand = c(0,0)) + theme_classic() + guides(color=guide_legend(ncol=3)) + theme(legend.title = element_blank(), legend.position = c(0.5,0.9))
+# plot.equil2 <- ggplot() + geom_line(data = B.it, aes(x = time, y = log(B), color = fg), lwd = 1) + labs(x = "Timesteps", y = "log(Biomass)") + theme_classic() + theme(legend.position = "none")
+# ggarrange(plot.equil1, plot.equil2, ncol = 1, nrow = 2, labels = c("A", "B"))
 
 # --------------------------------------------------- MODEL SETTINGS ---------------------------------------------------
 
