@@ -121,30 +121,24 @@ par.in  <- c(r.i, other.i) # optimize recruitment and food 'other' to achieve ex
 # proc.time()-ptm
 # r <- r.fit$par[1:9] # c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
 # other <- r.fit$par[10] # 55003764
-
-r <- c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
-other <- 55003764
+r          <- c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
+other      <- 55003764
 alpha_beta <- r # asymptote of BH srr
 
 # run model with calibrated recruitment and no fishing
-N0 <- calc_N0(uvc)
-N.ijt <- array(NA, dim = c(nsc, nspecies, t))
+N0         <- calc_N0(uvc)
+N.ijt      <- array(NA, dim = c(nsc, nspecies, t))
 N.ijt[,,1] <- N0
-S.ijt <- array(NA, dim = c(1, nspecies, t))
+S.ijt      <- array(NA, dim = c(1, nspecies, t))
 for(i in 2:t){
-        # recruitment
-        N.tmp <- N.ijt[,,i-1]
-        S.tmp <- calc_ssb(nspecies, nsc, L.lower, L.upper, N.ijt, i, Lmat)
-        N.tmp[1,] <- N.tmp[1,] + r
-        # calculate predation mortality
-        M2 <- calc_M2(N=N.tmp, suit, ration, nspecies, nsc, other, weight, sc_Linf, phi.min)
-        # natural mortality
-        N.tmp <- N.tmp * exp(-(M1+M2))
-        # grow
-        N.tmp <- calc_growth(N.tmp, phi, nsc, nspecies)
-        # NO fishing mortality for model calibration
-        N.ijt[,,i] <- N.tmp
-        S.ijt[,,i] <- S.tmp
+        N.tmp      <- N.ijt[,,i-1] # save temporary abundance from previous time step
+        S.tmp      <- calc_ssb(nspecies, nsc, L.lower, L.upper, N.ijt, i, Lmat) # calculate spawning stock biomass
+        N.tmp[1,]  <- N.tmp[1,] + r # implement recruitment
+        M2         <- calc_M2(N=N.tmp, suit, ration, nspecies, nsc, other, weight, sc_Linf, phi.min) # calculate predation mortality
+        N.tmp      <- N.tmp * exp(-(M1+M2)) # natural mortality
+        N.tmp      <- calc_growth(N.tmp, phi, nsc, nspecies) # implement fish growth
+        N.ijt[,,i] <- N.tmp # save abundance for current time step
+        S.ijt[,,i] <- S.tmp # save spawning stock biomass for current time step
 }
 
 # Parameterize Beverton-Holt model 
@@ -174,7 +168,7 @@ ggplot() + geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1
 # --------------------------------------------------- MODEL SETTINGS ---------------------------------------------------
 
 max.effort <- 29 # maximum effort for each gear type. Units are arbitrary
-effort <- seq(0, 1, length.out = 20) * max.effort # fishing effort to test
+effort     <- seq(0, 1, length.out = 20) * max.effort # fishing effort to test
 
 # --------------------------------------------------- MODEL SCENARIO 1: ALL GEARS ---------------------------------------------------
 gear.mgmt.1 <- c(1,1,1) # all gears used
@@ -208,8 +202,8 @@ scen.6.out  <- calc_summary_indices(N.ijte = scen.6[[1]], B.ijte = scen.6[[2]], 
 
 # --------------------------------------------------- MODEL SCENARIO 7: SPEAR FISHING ---------------------------------------------------
 gear.mgmt.7 <- c(0,0,1) # Only spear fishing
-scen.7 <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
-scen.7.out <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], t, L.mid, Lmat, nspecies)
+scen.7      <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.7.out  <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- MODEL SENSITIVITY ANALYSES ---------------------------------------------------
 # First set of sensitivity analyses run simulations with key parameters (i.e., alpha, beta, mu, sigma, Ge, and tau) increased or
