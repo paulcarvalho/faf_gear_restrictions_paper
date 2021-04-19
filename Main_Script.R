@@ -9,12 +9,15 @@
 ##              and catch response to various gear-based management scenarios. The 
 ##              model losely represents the Wakatobi coral reef fishery in Indonesia,
 ##              where certain model parameters were derived.
+# --------------------------------------------------------------------------------------------------------------------------
 
 # Clean workspace
 rm(list = ls())
 
-# --------------------------------------------------- LIBRARIES and DATA ---------------------------------------------------
+# --------------------------------------------------- GENERAL NOTES --------------------------------------------------------
+# 1. Use docstring([insert function name]) to view function documentation and information.
 
+# --------------------------------------------------- LIBRARIES and DATA ---------------------------------------------------
 library(readxl)
 library(pracma)
 library(ramify)
@@ -71,11 +74,6 @@ other.i <- 5e7
 mu    <- -3.5 # mean for lognormal function
 sigma <- 1    # sd for lognormal function
 
-# # Size selectvity and functional group catchability
-# # see Carvalho et al. 2020 for 'qs_[gear]' calculations (file - 'selectivity_index.R')
-# size_sel <- read_xlsx("model_params.xlsx", sheet = 3)
-# fg_cat   <- read_xlsx("model_params.xlsx", sheet = 4)
-
 # --------------------------------------------------- MODEL IMPLEMENTATION ---------------------------------------------------
 
 source('model_functions.R')
@@ -107,17 +105,6 @@ q <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into ar
 # run fisheries model
 source("run_model.R")
 
-
-# # Calculate the mean abundance per hectare for each functional group
-# mean.abundance.env <- new.env(parent = .BaseNamespaceEnv)
-# source("mean_abundance.R", mean.abundance.env)
-# 
-# # Use power-law density function to simulate initial size distribution
-size.dist.env <- new.env(parent = .BaseNamespaceEnv)
-source("size_dist.R", size.dist.env)
-N0 <- size.dist.env$N0 # rownames indicate lower limit (included) of size class
-N0 <- round(N0/5)
-
 # --------------------------------------------------- CALIBRATE RECRUITMENT ---------------------------------------------------
 
 # order: browser, detritivore, excavator/scraper, grazer, macro-invertivore, micro-invertivore, pisci-invertivore, piscivore, planktivore
@@ -140,6 +127,7 @@ other <- 55003764
 alpha_beta <- r # asymptote of BH srr
 
 # run model with calibrated recruitment and no fishing
+N0 <- calc_N0(uvc)
 N.ijt <- array(NA, dim = c(nsc, nspecies, t))
 N.ijt[,,1] <- N0
 S.ijt <- array(NA, dim = c(1, nspecies, t))

@@ -321,6 +321,59 @@ nat_mortality <- function(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, whi
   return(M)
 }
 
+calc_N0 <- function(uvc){
+  #' calc_N0
+  #'
+  #' @param uvc Empirical underwater census (fisheries-independent) data
+  #'
+  #' @return Matrix with initial starting abundance for each functional group (or species) and size class
+  
+  library(DescTools)
+  
+  # Calculate mean, standard deviation, and standard error for abundance per hectare
+  fg.abundance <- uvc %>% group_by(site_name, transect, fg) %>% summarise(abundance = sum(abundance)) %>% group_by(fg) %>% summarise(mean_ab = mean(abundance), sd_ab = sd(abundance), se_ab = std_err(abundance)) %>% mutate(mean_ab = mean_ab *40, sd_ab = sd_ab * 40, se_ab = se_ab * 40)
+  
+  # Size spectra functions to calculate N0
+  inverse_method <- function(n, xmin, xmax, b){
+    u <- runif(round(n))
+    x <- ((u*xmax^(b+1)) + ((1-u)*xmin^(b+1)))^(1/(b+1))
+    return(x)
+  }
+  bin_sizes <- function(n, xmax){
+    nmax <- RoundTo(max(n),(maxsize-minsize)/nsc,floor)
+    x <- cut(n, breaks=c(seq(minsize,nmax+(maxsize-minsize)/nsc,(maxsize-minsize)/nsc)), 
+             labels=as.character(c(seq(minsize,nmax,(maxsize-minsize)/nsc))), include.lowest = TRUE, right = FALSE)
+    if(nmax < xmax){
+      levels(x) = as.character(c(seq(minsize,xmax,(maxsize-minsize)/nsc)))
+    }
+    mat <- as.matrix(summary(x))
+    return(mat)
+  }
+  
+  # Length spectra values. Values fall within estimates derived in Robinson et al. (2017).
+  # Herbivores and detritivores were set shallower than other functional groups due to
+  # metabolic constraints on abundance-size relationship (Trebilco et al. 2013,
+  # Robinson and Baum 2019).
+  # b = -2.3 # herbivores and detritivores
+  # b = -2.7 # piscivores and invertivores and planktivores
+  fg <- c("Browser", "Detritivore", "Excavator/scraper", "Grazer", "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", "Piscivore", "Planktivore")
+  
+  N0 <- matrix(NA, nrow = nsc, ncol = length(Linf), dimnames = list(as.character(L.lower), NULL))
+  for(i in 1:length(Linf)){
+    if(fg[i] == "Browser" | fg[i] == "Excavator/scraper" |
+       fg[i] == "Grazer" | fg[i] == "Detritivore") b = -2.3 else b = -2.7
+       abundance <- fg.abundance %>% filter(fg == fg[i]) %>% dplyr::select(mean_ab)
+       n <- inverse_method(abundance$mean_ab, Lmin[i], Lmax[i], b)
+       Nij <- bin_sizes(n, Lmax[i])
+       if(length(Nij) > nsc) Nij = Nij[1:nsc,]
+       tmp.mat <- matrix(0, nrow = nsc, ncol = 1)
+       tmp.mat[1:length(Nij),1] <- Nij
+       N0[,i] <- tmp.mat
+  }
+  rownames(N0) <- as.character(L.lower)
+  return(N0)
+}
+
 bootstrap_qs <- function(landings, uvc, resample = TRUE){
   #' bootstrap_qs
   #'
