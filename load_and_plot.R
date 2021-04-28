@@ -46,6 +46,13 @@ plot1.df <- plot1.df %>%
 	mutate(biomass.rel = biomass/max(biomass)) %>% # relative biomass
 	mutate(catch.rel = catch/max(catch)) %>%       # relative catch
 	mutate(sq.diff = (biomass.rel-0.5)^2)          # find squared difference between relative biomass and 0.5 to identify effort and catch at 0.5B0
+
+### Find 0.35 and 0.65 B0
+tmp <- plot1.df %>%
+     mutate(diff35 = (biomass.rel-0.35)^2, diff65 = (biomass.rel-0.65)^2)
+tmp35 <- tmp %>% group_by(scenario) %>% summarise(min = min(diff35)) %>% left_join(., tmp, by = c("min" = "diff35")) %>% dplyr::select(scenario = scenario.x, effort.rel, catch.rel)
+tmp65 <- tmp %>% group_by(scenario) %>% summarise(min = min(diff65)) %>% left_join(., tmp, by = c("min" = "diff65")) %>% dplyr::select(scenario = scenario.x, effort.rel, catch.rel)
+
 # Find catch and effort at 0.5B0
 plot1Half.df <- plot1.df %>%
 	group_by(scenario) %>%

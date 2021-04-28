@@ -1,6 +1,36 @@
 # Functions
 # Author: Paul Carvalho
 
+run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min){
+  
+  # empty dataframe to store data
+  tot.vals <- NULL
+  fg.vals  <- NULL
+  # nonparametric bootstrap resample landings and UVC data and rerun model
+  for(i in 1:nbs){
+    q     <- bootstrap_qs(landings, uvc, resample = TRUE) # resample data via bootstrapping and generate bootstrapped catchability*selectivity parameters
+    q     <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
+    run.i <- run_model(effort.bs, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+    # Total
+    total.N  <- colSums(run.i[[1]][, , t, ], dims = 2)
+    total.B  <- colSums(run.i[[2]][, , t, ], dims = 2)
+    total.CN <- colSums(run.i[[3]][, , t, ], dims = 2)
+    total.CB <- colSums(run.i[[4]][, , t, ], dims = 2)
+    tmp1     <- data.frame(i = i, effort = effort.bs, Ntot = total.N, Btot = total.B, CNtot = total.CN, CBtot = total.CB)
+    tot.vals <- rbind(tot.vals, tmp1)
+    # Functional group
+    fg.N    <- as.vector(colSums(run.i[[1]][, , t, ]))
+    fg.B    <- as.vector(colSums(run.i[[2]][, , t, ]))
+    fg.CN   <- as.vector(colSums(run.i[[3]][, , t, ]))
+    fg.CB   <- as.vector(colSums(run.i[[4]][, , t, ]))
+    tmp2    <- data.frame(i = i, effort = rep(effort.bs, each = nspecies), fg = rep(c("Browser", "Detritivore", "Excavator/Scraper", "Grazer", "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", "Piscivore", "Planktivore"), 3), N = fg.N, B = fg.B, CN = fg.CN, CB = fg.CB)
+    fg.vals <- rbind(fg.vals, tmp2) 
+  }
+  # calculate summary stats
+  tmp3 <- tot.vals %>% filter(effort == effort.bs[1]) 
+  CI(tmp3$Ntot, ci = 0.95)
+}
+
 
 calc_phi <- function(L.lower, L.upper, Linf, k, nsc){
   #' calc_phi
@@ -327,11 +357,11 @@ calc_N0 <- function(uvc){
   #' @param uvc Empirical underwater census (fisheries-independent) data
   #'
   #' @return Matrix with initial starting abundance for each functional group (or species) and size class
-  
+
   library(DescTools)
   
   # Calculate mean, standard deviation, and standard error for abundance per hectare
-  fg.abundance <- uvc %>% group_by(site_name, transect, fg) %>% summarise(abundance = sum(abundance)) %>% group_by(fg) %>% summarise(mean_ab = mean(abundance), sd_ab = sd(abundance), se_ab = std_err(abundance)) %>% mutate(mean_ab = mean_ab *40, sd_ab = sd_ab * 40, se_ab = se_ab * 40)
+  fg.abundance <- uvc %>% dplyr::group_by(site_name, transect, fg) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(fg) %>% dplyr::summarise(mean_ab = mean(abundance), sd_ab = sd(abundance), se_ab = std_err(abundance)) %>% mutate(mean_ab = mean_ab *40, sd_ab = sd_ab * 40, se_ab = se_ab * 40)
   
   # Size spectra functions to calculate N0
   inverse_method <- function(n, xmin, xmax, b){
@@ -392,7 +422,7 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   
   if(resample == TRUE){
     # Resample landings data via bootstrapping
-    trip.sample <- landings %>% group_by(trip_id, gear_cat1) %>% summarize(size = sum(abundance)) # Save trip IDs and gear and number of fish caught
+    trip.sample <- landings %>% dplyr::group_by(trip_id, gear_cat1) %>% dplyr::summarize(size = sum(abundance)) # Save trip IDs and gear and number of fish caught
     landings.bs <- NULL # empty dataframe to fill during resampling of landings data
     for(i in 1:length(trip.sample$trip_id)){ # Iterate through trips and resample from fish caught by each gear
       gear.i           <- trip.sample$gear_cat1[i] # save gear for trip.id[i]
@@ -406,7 +436,7 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
     landings <- landings.bs
     
     # Resample UVC data via bootstrapping
-    site.sample <- uvc %>% mutate(site_tran = paste(site_name, transect)) %>% dplyr::select(site_name, site_tran, fg, size_5cm_bin, abundance) %>% group_by(site_name, site_tran) %>% summarize(size = sum(abundance)) # Save site and transects and number of fish observed
+    site.sample <- uvc %>% mutate(site_tran = paste(site_name, transect)) %>% dplyr::select(site_name, site_tran, fg, size_5cm_bin, abundance) %>% dplyr::group_by(site_name, site_tran) %>% dplyr::summarize(size = sum(abundance)) # Save site and transects and number of fish observed
     uvc.bs      <- NULL # empty dataframe to fill during resampling of landings data
     for(i in 1:length(site.sample$site_tran)){ # Iterate through site_trans and resample from fish observed at each site
       site.i           <- site.sample$site_name[i] # save site name for site_tran[i]
@@ -422,15 +452,15 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   }
   
   # Calculate the ratio of catch per trip for each functional group (i), and functional group and size class (ij) - bootstrapped landings data
-  c_i         <- landings %>% dplyr::group_by(trip_id, gear_cat1, fg) %>% mutate(abundance = 1) %>% summarise(abundance = sum(abundance)) %>% dplyr::group_by(trip_id, gear_cat1) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, gear_cat1) %>% summarise(c = mean(ratio), c_stderr = std.error(ratio))
+  c_i         <- landings %>% dplyr::group_by(trip_id, gear_cat1, fg) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(trip_id, gear_cat1) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, gear_cat1) %>% dplyr::summarise(c = mean(ratio), c_stderr = std.error(ratio))
   names(c_i)  <- c("fg", "gear", "c", "c_stderr")
-  c_ij        <- landings %>% dplyr::group_by(trip_id, gear_cat1, fg, bin_5cm) %>% mutate(abundance = 1) %>% summarise(abundance = sum(abundance)) %>% dplyr::group_by(trip_id, gear_cat1) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, bin_5cm, gear_cat1) %>% summarise(c = mean(ratio), c_stderr = std.error(ratio))
+  c_ij        <- landings %>% dplyr::group_by(trip_id, gear_cat1, fg, bin_5cm) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(trip_id, gear_cat1) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, bin_5cm, gear_cat1) %>% dplyr::summarise(c = mean(ratio), c_stderr = std.error(ratio))
   names(c_ij) <- c("fg", "sc", "gear", "c", "c_stderr")
   
   # Calculate the ratio of numbers per transect per functional group (i) and functional group and size class (ij) - bootstrapped UVC data  
-  n_i         <- uvc %>% dplyr::group_by(site_tran, fg) %>% mutate(abundance = 1) %>% summarise(abundance = sum(abundance)) %>% dplyr::group_by(site_tran) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg) %>% summarise(n = mean(ratio), n_stderr = std.error(ratio))
+  n_i         <- uvc %>% dplyr::group_by(site_tran, fg) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(site_tran) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg) %>% dplyr::summarise(n = mean(ratio), n_stderr = std.error(ratio))
   names(n_i)  <- c("fg", "n", "n_stderr")
-  n_ij        <- uvc %>% dplyr::group_by(site_tran, fg, size_5cm_bin) %>% mutate(abundance = 1) %>% summarise(abundance = sum(abundance)) %>% dplyr::group_by(site_tran) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, size_5cm_bin) %>% summarise(n = mean(ratio), n_stderr = std.error(ratio))
+  n_ij        <- uvc %>% dplyr::group_by(site_tran, fg, size_5cm_bin) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(site_tran) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, size_5cm_bin) %>% dplyr::summarise(n = mean(ratio), n_stderr = std.error(ratio))
   names(n_ij) <- c("fg", "sc", "n", "n_stderr")  
   
   cn_ij <- c_ij %>% full_join(., n_ij, by = c("fg", "sc")) # Merge landings and UVC dataframes
