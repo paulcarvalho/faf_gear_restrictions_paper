@@ -2,15 +2,50 @@
 # Author: Paul Carvalho
 
 run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min){
-  
+  #' run_bsmodel
+  #' @description Run the fisheries model and resample landings and UVC data via nonparametric bootstrapping to quantify uncertainty in catchability (function group/species) and selectivity (size).
+  #'
+  #' @param nbs number of bootstrapping iterations 
+  #' @param landings fisheries-dependent data
+  #' @param uvc fisheries-independent data
+  #' @param effort.bs vector of effort levels to run 
+  #' @param gear.mgmt see run_model() description
+  #' @param nsc see run_model() description
+  #' @param nspecies see run_model() description
+  #' @param t see run_model() description
+  #' @param Lmat see run_model() description
+  #' @param M1 see run_model() description
+  #' @param phi see run_model() description
+  #' @param L.lower see run_model() description
+  #' @param L.upper see run_model() description
+  #' @param W.a see run_model() description
+  #' @param W.b see run_model() description
+  #' @param alpha see run_model() description
+  #' @param beta see run_model() description
+  #' @param suit see run_model() description
+  #' @param ration see run_model() description
+  #' @param other see run_model() description
+  #' @param weight see run_model() description
+  #' @param sc_Linf see run_model() description
+  #' @param phi.min see run_model() description
+  #'
+  #' @return List with (1) overall mean and confidence intervals for abundance, biomass, and catch and (2) mean and confidence intervals of abundance, biomass, and catch for each functional group/species.
+
   # empty dataframe to store data
   tot.vals <- NULL
   fg.vals  <- NULL
+  
   # nonparametric bootstrap resample landings and UVC data and rerun model
   for(i in 1:nbs){
-    q     <- bootstrap_qs(landings, uvc, resample = TRUE) # resample data via bootstrapping and generate bootstrapped catchability*selectivity parameters
-    q     <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
-    run.i <- run_model(effort.bs, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+    q.new <- NULL
+    q.new <- bootstrap_qs(landings, uvc, resample = TRUE) # resample data via bootstrapping and generate bootstrapped catchability*selectivity parameters
+    q.new <- array(as.numeric(unlist(q.new)), dim = c(nsc, nspecies, 3)) # turn list into array
+    
+    print(i)
+    # test1 <- heatmap(t(q.new[,,1]), Colv=NA, Rowv=NA, scale="none", margins=c(9.5,9.5))
+    # test2 <- heatmap(t(q.new[,,1]), Colv=NA, Rowv=NA, scale="none", margins=c(9.5,9.5))
+    
+    run.i <- run_model(effort = effort.bs, gear.mgmt = gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q.new, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
     # Total
     total.N  <- colSums(run.i[[1]][, , t, ], dims = 2)
     total.B  <- colSums(run.i[[2]][, , t, ], dims = 2)
@@ -27,10 +62,10 @@ run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies,
     fg.vals <- rbind(fg.vals, tmp2) 
   }
   # calculate summary stats
-  tmp3 <- tot.vals %>% filter(effort == effort.bs[1]) 
-  CI(tmp3$Ntot, ci = 0.95)
+  tmp3 <- tot.vals %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort) %>% dplyr::summarise(N.mu = mean(Ntot), N.sd = sd(Ntot), B.mu = mean(Btot), B.sd = sd(Btot), CN.mu = mean(CNtot), CN.sd = sd(CNtot), CB.mu = mean(CBtot), CB.sd = sd(CBtot)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se) %>% dplyr::select(effort, N.mu, N.up, N.lo, B.mu, B.up, B.lo, CN.mu, CN.up, CN.lo, CB.mu, CB.up, CB.lo)
+  tmp4 <- fg.vals %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort, fg) %>% dplyr::summarise(N.mu = mean(N), N.sd = sd(N), B.mu = mean(B), B.sd = sd(B), CN.mu = mean(CN), CN.sd = sd(CN), CB.mu = mean(CB), CB.sd = sd(CB)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se)
+  return(list(tmp3, tmp4))
 }
-
 
 calc_phi <- function(L.lower, L.upper, Linf, k, nsc){
   #' calc_phi
@@ -296,7 +331,7 @@ nat_mortality <- function(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, whi
     cbp2   <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
     M.df   <- as.data.frame(M)
     M.plot <- M.df %>%
-      mutate(size = Lmid) %>%
+      dplyr::mutate(size = Lmid) %>%
       dplyr::select(size, "Browsers" = V1, "Detritivores" = V2, "Excavators/scrapers" = V3,
                     "Grazers" = V4, "Macro-invertivores" = V5, "Micro-invertivores" = V6,
                     "Pisci-invertivores" = V7, "Piscivores" = V8, "Planktivores" = V9) %>%
@@ -361,7 +396,7 @@ calc_N0 <- function(uvc){
   library(DescTools)
   
   # Calculate mean, standard deviation, and standard error for abundance per hectare
-  fg.abundance <- uvc %>% dplyr::group_by(site_name, transect, fg) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(fg) %>% dplyr::summarise(mean_ab = mean(abundance), sd_ab = sd(abundance), se_ab = std_err(abundance)) %>% mutate(mean_ab = mean_ab *40, sd_ab = sd_ab * 40, se_ab = se_ab * 40)
+  fg.abundance <- uvc %>% dplyr::group_by(site_name, transect, fg) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(fg) %>% dplyr::summarise(mean_ab = mean(abundance), sd_ab = sd(abundance), se_ab = std_err(abundance)) %>% dplyr::mutate(mean_ab = mean_ab *40, sd_ab = sd_ab * 40, se_ab = se_ab * 40)
   
   # Size spectra functions to calculate N0
   inverse_method <- function(n, xmin, xmax, b){
@@ -404,7 +439,7 @@ calc_N0 <- function(uvc){
   return(N0)
 }
 
-bootstrap_qs <- function(landings, uvc, resample = TRUE){
+bootstrap_qs <- function(landings, uvc, resample = NULL){
   #' bootstrap_qs
   #'
   #' @description Resample (via bootstrapping) landings and uvc data to quantify uncertainty in catchability and selectivity.
@@ -416,31 +451,39 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   #' @return List with products of catchability and selectivity for (1) hook, (2) net, and (3) spear.
 
   # Filter out size that are not included in the model and not exploited in the fishery
-  landings <- landings %>% filter(size_cm >= 10 & size_cm < 65)
-  uvc      <- uvc %>% filter(size_cm >= 10 & size_cm < 65) %>% mutate(site_tran = paste(site_name, transect))
-  uni.fg   <- unique(landings$fg) # Get unique functional groups
+  landings.tmp <- landings %>% filter(size_cm >= 10 & size_cm < 65)
+  uvc.tmp      <- uvc %>% filter(size_cm >= 10 & size_cm < 65) %>% dplyr::mutate(site_tran = paste(site_name, transect))
+  uni.fg       <- unique(landings.tmp$fg) # Get unique functional groups
   
-  if(resample == TRUE){
+  if(resample == FALSE){
+    uvc.tmp <- uvc.tmp %>% dplyr::select(fg, size_5cm_bin, site = site_name, site_tran, abundance)
+    uvc.tmp <- setDT(expandRows(uvc.tmp, 'abundance'))
+  } else if(resample == TRUE){
     # Resample landings data via bootstrapping
-    trip.sample <- landings %>% dplyr::group_by(trip_id, gear_cat1) %>% dplyr::summarize(size = sum(abundance)) # Save trip IDs and gear and number of fish caught
+    trip.sample <- landings.tmp %>% 
+                   dplyr::group_by(trip_id, fishing_ground, gear_cat1) %>% 
+                   dplyr::summarize(size = sum(abundance)) # Save trip IDs and gear and number of fish caught
     landings.bs <- NULL # empty dataframe to fill during resampling of landings data
-    for(i in 1:length(trip.sample$trip_id)){ # Iterate through trips and resample from fish caught by each gear
-      gear.i           <- trip.sample$gear_cat1[i] # save gear for trip.id[i]
-      sample.i         <- landings %>% filter(gear_cat1 == gear.i) %>% dplyr::select(fg, size_cm, bin_5cm) %>% filter(!(size_cm < 10)) # save all fg and sizes caught by gear.i
-      index.bs         <- sample(x = 1:length(sample.i$fg), size = trip.sample$size[i], replace = TRUE) # sample indexes from all landings for gear.i
-      tmp.bs           <- sample.i[index.bs, ] # save the functional groups and size classes that were sampled
-      tmp.bs$trip_id   <- trip.sample$trip_id[i] # save trip
-      tmp.bs$gear_cat1 <- trip.sample$gear_cat1[i] # save gear
-      landings.bs      <- rbind(landings.bs, tmp.bs) # add to full bootstrapped sample
+    for(i in 1:length(trip.sample$trip_id)){ # Iterate through trips and resample from each trip
+      trip.i           <- trip.sample$trip_id[i] # index for a single trip
+      gear.i           <- trip.sample$gear_cat1[i] # get gear for trip.i
+      sample.i         <- landings.tmp %>% filter(trip_id == trip.i) %>% d
+                          plyr::select(fg, size_cm, bin_5cm) %>% 
+                          filter(size_cm >= 10) # save fg and sizes caught for trip.i
+      index.bs         <- sample(x = 1:length(sample.i$fg), size = length(sample.i$fg), replace = TRUE) # sample from trip.i with replacement
+      tmp.bs           <- sample.i[index.bs,] # get functional froups and size classes for new sample
+      tmp.bs$trip_id   <- trip.i
+      tmp.bs$gear_cat1 <- gear.i
+      landings.bs      <- rbind(landings.bs, tmp.bs)
     }
-    landings <- landings.bs
+    landings.tmp <- landings.bs
     
     # Resample UVC data via bootstrapping
-    site.sample <- uvc %>% mutate(site_tran = paste(site_name, transect)) %>% dplyr::select(site_name, site_tran, fg, size_5cm_bin, abundance) %>% dplyr::group_by(site_name, site_tran) %>% dplyr::summarize(size = sum(abundance)) # Save site and transects and number of fish observed
+    site.sample <- uvc.tmp %>% dplyr::mutate(site_tran = paste(site_name, transect)) %>% dplyr::select(site_name, site_tran, fg, size_5cm_bin, abundance) %>% dplyr::group_by(site_name, site_tran) %>% dplyr::summarize(size = sum(abundance)) # Save site and transects and number of fish observed
     uvc.bs      <- NULL # empty dataframe to fill during resampling of landings data
     for(i in 1:length(site.sample$site_tran)){ # Iterate through site_trans and resample from fish observed at each site
       site.i           <- site.sample$site_name[i] # save site name for site_tran[i]
-      sample.i         <- uvc %>% filter(site_name == site.i) %>% dplyr::select(fg, size_5cm_bin, abundance) # save all fish observed at site.i
+      sample.i         <- uvc.tmp %>% filter(site_name == site.i) %>% dplyr::select(fg, size_5cm_bin, abundance) # save all fish observed at site.i
       sample.i         <- setDT(expandRows(sample.i, 'abundance')) # expand table based on abundance
       index.bs         <- sample(x = 1:length(sample.i$fg), size = site.sample$size[i], replace = TRUE) # sample indexes from all fish observed at site.i
       tmp.bs           <- sample.i[index.bs, ] # save the functional groups and size classes that were sampled
@@ -448,30 +491,58 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
       tmp.bs$site_tran <- site.sample$site_tran[i] # save the site name and transect
       uvc.bs           <- rbind(uvc.bs, tmp.bs) # add to full bootstrapped sample
     }
-    uvc <- uvc.bs
+    uvc.tmp <- uvc.bs
   }
   
   # Calculate the ratio of catch per trip for each functional group (i), and functional group and size class (ij) - bootstrapped landings data
-  c_i         <- landings %>% dplyr::group_by(trip_id, gear_cat1, fg) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(trip_id, gear_cat1) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, gear_cat1) %>% dplyr::summarise(c = mean(ratio), c_stderr = std.error(ratio))
+  c_i         <- landings.tmp %>% 
+                 dplyr::group_by(trip_id, gear_cat1, fg) %>% 
+                 dplyr::mutate(abundance = 1) %>% 
+                 dplyr::summarise(abundance = sum(abundance)) %>% 
+                 dplyr::group_by(trip_id, gear_cat1) %>% 
+                 dplyr::mutate(ratio = abundance/sum(abundance)) %>% 
+                 dplyr::group_by(fg, gear_cat1) %>% 
+                 dplyr::summarise(c = mean(ratio), c_stderr = std.error(ratio))
   names(c_i)  <- c("fg", "gear", "c", "c_stderr")
-  c_ij        <- landings %>% dplyr::group_by(trip_id, gear_cat1, fg, bin_5cm) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(trip_id, gear_cat1) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, bin_5cm, gear_cat1) %>% dplyr::summarise(c = mean(ratio), c_stderr = std.error(ratio))
+  c_ij        <- landings.tmp %>% 
+                 dplyr::group_by(trip_id, gear_cat1, fg, bin_5cm) %>% 
+                 dplyr::mutate(abundance = 1) %>% 
+                 dplyr::summarise(abundance = sum(abundance)) %>% 
+                 dplyr::group_by(trip_id, gear_cat1) %>% 
+                 dplyr::mutate(ratio = abundance/sum(abundance)) %>%
+                 dplyr::group_by(fg, bin_5cm, gear_cat1) %>% 
+                 dplyr::summarise(c = mean(ratio), c_stderr = std.error(ratio))
   names(c_ij) <- c("fg", "sc", "gear", "c", "c_stderr")
   
   # Calculate the ratio of numbers per transect per functional group (i) and functional group and size class (ij) - bootstrapped UVC data  
-  n_i         <- uvc %>% dplyr::group_by(site_tran, fg) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(site_tran) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg) %>% dplyr::summarise(n = mean(ratio), n_stderr = std.error(ratio))
+  n_i         <- uvc.tmp %>% 
+                 dplyr::group_by(site_tran, fg) %>% 
+                 dplyr::mutate(abundance = 1) %>% 
+                 dplyr::summarise(abundance = sum(abundance)) %>% 
+                 dplyr::group_by(site_tran) %>% 
+                 dplyr::mutate(ratio = abundance/sum(abundance)) %>% 
+                 dplyr::group_by(fg) %>% 
+                 dplyr::summarise(n = mean(ratio), n_stderr = std.error(ratio))
   names(n_i)  <- c("fg", "n", "n_stderr")
-  n_ij        <- uvc %>% dplyr::group_by(site_tran, fg, size_5cm_bin) %>% mutate(abundance = 1) %>% dplyr::summarise(abundance = sum(abundance)) %>% dplyr::group_by(site_tran) %>% mutate(ratio = abundance/sum(abundance)) %>% dplyr::group_by(fg, size_5cm_bin) %>% dplyr::summarise(n = mean(ratio), n_stderr = std.error(ratio))
+  n_ij        <- uvc.tmp %>% 
+                 dplyr::group_by(site_tran, fg, size_5cm_bin) %>% 
+                 dplyr::mutate(abundance = 1) %>% 
+                 dplyr::summarise(abundance = sum(abundance)) %>%
+                 dplyr::group_by(site_tran) %>% 
+                 dplyr::mutate(ratio = abundance/sum(abundance)) %>% 
+                 dplyr::group_by(fg, size_5cm_bin) %>% 
+                 dplyr::summarise(n = mean(ratio), n_stderr = std.error(ratio))
   names(n_ij) <- c("fg", "sc", "n", "n_stderr")  
   
-  cn_ij <- c_ij %>% full_join(., n_ij, by = c("fg", "sc")) # Merge landings and UVC dataframes
-  q_i   <- c_i %>% full_join(., n_i, by = c("fg")) %>% mutate(q = c/n) # Calculate catchability; fisheries-dependent/-independent
+  cn_ij   <- c_ij %>% full_join(., n_ij, by = c("fg", "sc")) # Merge landings and UVC dataframes
+  q_i     <- c_i %>% full_join(., n_i, by = c("fg")) %>% dplyr::mutate(q = c/n) # Calculate catchability; fisheries-dependent/-independent
   L.lower <- seq(from = 0, to = 65 - (65-5)/12, length.out = 13)   # low limit included in the size class
   L.upper <- seq(from = 0 + ((65-5)/12), to = 65, length.out = 13) # upper limit excluded
-  Lmid <- ((L.lower + L.upper) / 2)[2:12] # Only include exploited size classes or modeled size classes
+  Lmid    <- ((L.lower + L.upper) / 2)[2:12] # Only include exploited size classes or modeled size classes
   
-  hook.dist  <- landings %>% filter(gear_cat1 == "line");  hf.lnorm <- fitdist(hook.dist$size_cm, "lnorm") # fit lognormal distribution to hook-and-line landings
-  net.dist   <- landings %>% filter(gear_cat1 == "net");   nf.lnorm <- fitdist(net.dist$size_cm, "lnorm") # fit lognormal distribution to net landings data
-  spear.dist <- landings %>% filter(gear_cat1 == "spear"); sf.lnorm <- fitdist(spear.dist$size_cm, "lnorm") # fit lognormal distribution to spear landings data
+  hook.dist  <- landings.tmp %>% filter(gear_cat1 == "line");  hf.lnorm <- fitdist(hook.dist$size_cm, "lnorm") # fit lognormal distribution to hook-and-line landings
+  net.dist   <- landings.tmp %>% filter(gear_cat1 == "net");   nf.lnorm <- fitdist(net.dist$size_cm, "lnorm") # fit lognormal distribution to net landings data
+  spear.dist <- landings.tmp %>% filter(gear_cat1 == "spear"); sf.lnorm <- fitdist(spear.dist$size_cm, "lnorm") # fit lognormal distribution to spear landings data
   
   # Optimization function
   q_optim <- function(params, x, mu, sd, cn_ij, gear_type, fg, sc){
@@ -481,7 +552,7 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
     sj    <- as.matrix(sj)
     model <- sj %*% q
     # expected
-    cn_ij_x    <- cn_ij %>% mutate(fg = as.factor(fg)) %>% filter(gear == gear_type)
+    cn_ij_x    <- cn_ij %>% dplyr::mutate(fg = as.factor(fg)) %>% dplyr::filter(gear == gear_type)
     cn_ij_x$cn <- cn_ij_x$c / cn_ij_x$n
     cn_ij_x    <- cn_ij_x[,c(1,2,8)]
     ## need to check for missing fg and sc combinations
@@ -503,15 +574,14 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   par      <- subset(q_i, gear == "line")[,c(1,7)] # initial catchabilities for line fishing
   missing  <- setdiff(uni.fg, par$fg) # check if functional groups are missing
   if (length(missing) > 0) {par <- rbind(data.frame(fg = missing, q = 0), (as.data.frame(par)))} # fill in missing functional group(s) with q=0
-  hook_par <- t(as.matrix(par$q)) # save catchabilities for optimization
+  hook_par <- t(as.matrix(par$q))  # save catchabilities for optimization
   mu.hook  <- hf.lnorm$estimate[1] # log(mean) for size selectivity
   sd.hook  <- hf.lnorm$estimate[2] # log(standard deviation) for size selectivity
   x_hook   <- Lmid # Set size classes to model
-  hook_fit <- optim(par = hook_par, fn = q_optim, lower = c(0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), upper = c(1, 500, 500, 500, 500, 500, 500, 500, 500), method = "L-BFGS-B", control = list(maxit = 5000), x = x_hook, mu = mu.hook, sd = sd.hook, cn_ij = cn_ij, gear_type = "line", fg = unique(landings$fg), sc = unique(landings$bin_5cm))
+  hook_fit <- optim(par = hook_par, fn = q_optim, lower = c(0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), upper = c(1, 500, 500, 500, 500, 500, 500, 500, 500), method = "L-BFGS-B", control = list(maxit = 5000), x = x_hook, mu = mu.hook, sd = sd.hook, cn_ij = cn_ij, gear_type = "line", fg = unique(landings.tmp$fg), sc = unique(landings.tmp$bin_5cm))
   F_hook             <- (as.matrix(dlnorm(x_hook,mu.hook,sd.hook))) %*% (as.matrix(hook_fit$par)) # Calculate q*s with optimized parameters
   F_hook[F_hook < 0] <- 0 # Set negative values, if any, to zero
   F_hook             <- F_hook / sum(F_hook) # Calculate proportional q*s values
-  # hook_heat          <- heatmap(t(F_hook), Colv=NA, Rowv=NA, scale="none", labCol=levels(cn_ij$sc), labRow=levels(as.factor(cn_ij$fg)), margins=c(9.5,9.5))
   
   # Net catchability (q) optimization
   par     <- subset(q_i, gear == "net")[,c(1,7)] # initial catchabilities for net fishing
@@ -521,11 +591,10 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   mu.net  <- nf.lnorm$estimate[1] # log(mean) for size selectivity
   sd.net  <- nf.lnorm$estimate[2] # log(standard deviation) for size selectivity
   x_net   <- Lmid # Set size classes to model
-  net_fit <- optim(par = net_par, fn = q_optim, lower = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), upper = c(500, 500, 500, 500, 500, 500, 500, 500, 500), method = "L-BFGS-B", control = list(maxit = 10000), x = x_net, mu = mu.net, sd = sd.net, cn_ij = cn_ij, gear_type = "net", fg = unique(landings$fg), sc = unique(landings$bin_5cm))
+  net_fit <- optim(par = net_par, fn = q_optim, lower = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), upper = c(500, 500, 500, 500, 500, 500, 500, 500, 500), method = "L-BFGS-B", control = list(maxit = 10000), x = x_net, mu = mu.net, sd = sd.net, cn_ij = cn_ij, gear_type = "net", fg = unique(landings.tmp$fg), sc = unique(landings.tmp$bin_5cm))
   F_net            <- (as.matrix(dlnorm(x_net, mu.net, sd.net))) %*% (as.matrix(net_fit$par)) # Calculate q*s with optimized parameters
   F_net[F_net < 0] <- 0 # Set negative values, in any, to zero
   F_net            <- F_net / sum(F_net) # Caclulate proportional q*s values
-  # net_heat <- heatmap(t(F_net), Colv=NA, Rowv=NA, scale="none", labCol=levels(cn_ij$sc), labRow=levels(as.factor(cn_ij$fg)), margins=c(9.5,9.5))
   
   # Spear catchability (q) optimization
   par       <- subset(q_i, gear == "spear")[,c(1,7)] # initial catchabilities for spear fishing
@@ -535,10 +604,14 @@ bootstrap_qs <- function(landings, uvc, resample = TRUE){
   mu.spear  <- sf.lnorm$estimate[1] # log(mean) for size selectivity
   sd.spear  <- sf.lnorm$estimate[2] # log(standard deviation) for size selectivity
   x_spear   <- Lmid # Set size classes to model  
-  spear_fit <- optim(par = spear_par, fn = q_optim, lower = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), upper = c(500, 500, 500, 500, 500, 500, 500, 500, 500), method = "L-BFGS-B", control = list(maxit = 10000), x = x_spear, mu = mu.spear, sd = sd.spear, cn_ij = cn_ij, gear_type = "spear", fg = unique(landings$fg), sc = unique(landings$bin_5cm))
+  spear_fit <- optim(par = spear_par, fn = q_optim, lower = c(0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1), upper = c(500, 500, 500, 500, 500, 500, 500, 500, 500), method = "L-BFGS-B", control = list(maxit = 10000), x = x_spear, mu = mu.spear, sd = sd.spear, cn_ij = cn_ij, gear_type = "spear", fg = unique(landings.tmp$fg), sc = unique(landings.tmp$bin_5cm))
   F_spear              <- (as.matrix(dlnorm(x_spear, mu.spear, sd.spear))) %*% (as.matrix(spear_fit$par)) # Calculate q*s with optimized parameters
   F_spear[F_spear < 0] <- 0 # Set negative values, if any, to zero
   F_spear              <- F_spear / sum(F_spear) # Calculate proportional q*s values
+  
+  # PLOTS
+  # hook_heat  <- heatmap(t(F_hook), Colv=NA, Rowv=NA, scale="none", labCol=levels(cn_ij$sc), labRow=levels(as.factor(cn_ij$fg)), margins=c(9.5,9.5))
+  # net_heat   <- heatmap(t(F_net), Colv=NA, Rowv=NA, scale="none", labCol=levels(cn_ij$sc), labRow=levels(as.factor(cn_ij$fg)), margins=c(9.5,9.5))
   # spear_heat <- heatmap(t(F_spear), Colv=NA, Rowv=NA, scale="none", labCol=levels(cn_ij$sc), labRow=levels(as.factor(cn_ij$fg)), margins=c(9.5,9.5))
   
   return(list(F_hook, F_net, F_spear))  
@@ -795,7 +868,7 @@ calc_sensitivity_indices <- function(N.ijte, B.ijte, cN.ijte, cB.ijte, L.mid, Lm
   # Create dataframe
   si.df <- data.frame(effort = base.effort, B = B.equil, cB = cB.equil, BmeanL = BmeanL, CmeanL = CmeanL)
   # Find values at 0.5B0
-  si.df <- si.df %>% mutate(sq.diff = (B - (max(B)/2))^2)
+  si.df <- si.df %>% dplyr::mutate(sq.diff = (B - (max(B)/2))^2)
   out   <- si.df[which(si.df$sq.diff == min(si.df$sq.diff)),]
   return(out)
 }

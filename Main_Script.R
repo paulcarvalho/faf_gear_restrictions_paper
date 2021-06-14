@@ -49,13 +49,13 @@ nspecies <- 9 # number of species/functional groups
 nsc      <- 11 # number of size classes
 
 # life-history parameters
-k         <- LH.params$k # instantaneous growth parameters of the von Bertalanffy growth equation
-Linf      <- LH.params$Linf # asymptotic length parameters of the von Bertalanffy growth equation
-W.a       <- LH.params$W_a # intercept parameters of length-weight relationship
-W.b       <- LH.params$W_b # slope parameters of length-weight relationship
-Lmin      <- LH.params$Lmin # minimum sizes in centimeters
-Lmax      <- LH.params$Lmax # maximum sizes in centimeters
-Lmat      <- LH.params$Lmat # length at maturity
+k    <- LH.params$k # instantaneous growth parameters of the von Bertalanffy growth equation
+Linf <- LH.params$Linf # asymptotic length parameters of the von Bertalanffy growth equation
+W.a  <- LH.params$W_a # intercept parameters of length-weight relationship
+W.b  <- LH.params$W_b # slope parameters of length-weight relationship
+Lmin <- LH.params$Lmin # minimum sizes in centimeters
+Lmax <- LH.params$Lmax # maximum sizes in centimeters
+Lmat <- LH.params$Lmat # length at maturity
 
 # lower and upper limits of size classes
 maxsize <- max(Linf) # max Linf
@@ -99,9 +99,18 @@ suit <- calc_suit(M2_prefs, tau, nsc, nspecies, sc_Linf)
 # natural mortality rate (M1)
 M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # natural mortality (excluding predation)
 
-# bootstrap (resample) landings and uvc data to quantify uncertainty in catchability and selectivity
-q <- bootstrap_qs(landings, uvc, resample = FALSE)
-q <- array(as.numeric(unlist(q)), dim = c(nsc, nspecies, 3)) # turn list into array
+# bootstrap (resample) landings and uvc data to calculate base catchability*selectivity 
+num.bs   <- 100 # number of bootstraps
+base.bs <- array(NA, dim = c(nsc, nspecies, 3, num.bs)) 
+for(j in 1:num.bs){
+     q.tmp <- bootstrap_qs(landings, uvc, resample = TRUE)
+     q.tmp <- array(as.numeric(unlist(q.tmp)), dim = c(nsc, nspecies, 3))
+     base.bs[, , , j] <- q.tmp
+}
+test.hook  <- apply(base.bs[, , 1, ], c(1, 2), mean); test.hook  <- test.hook/sum(test.hook)
+test.net   <- apply(base.bs[, , 2, ], c(1, 2), mean); test.net   <- test.net/sum(test.net)
+test.spear <- apply(base.bs[, , 3, ], c(1, 2), mean); test.spear <- test.spear/sum(test.spear)
+q <- array(c(test.hook, test.net, test.spear), dim = c(nsc, nspecies, 3)) 
 
 # run fisheries model
 source("run_model.R")
@@ -143,14 +152,20 @@ for(i in 2:t){
 }
 
 # Parameterize Beverton-Holt model 
-SSB   <- calc_bio(S.ijt, t, L.lower, L.upper, W.a, W.b, 1, nspecies) # calculate SSB
-Ro    <- r # estimated recruitment at virgin biomass
-Bo    <- SSB[,,t]                     # estimated virgin spawning stock biomass
-alpha <- (Bo/Ro) * ((1-h)/4*h) # Beverton-Holt parameter (1/alpha is the maximum per capita production of recruits)
-beta  <- (5*h - 1) / (4*h*Ro)   # Beverton-Holt parameter (R approaches 1/beta as biomass increases)
-BH.df <- data.frame(fg = rep(c("Browser", "Detritivore", "Excavator/Scraper", "Grazer", "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", "Piscivore", "Planktivore"), each = 1000), BHb = rep(seq(1,1000,1), 9), alpha = rep(alpha, each = 1000), beta = rep(beta, each = 1000))
+SSB       <- calc_bio(S.ijt, t, L.lower, L.upper, W.a, W.b, 1, nspecies) # calculate SSB
+Ro        <- r # estimated recruitment at virgin biomass
+Bo        <- SSB[,,t]                     # estimated virgin spawning stock biomass
+alpha     <- (Bo/Ro) * ((1-h)/4*h) # Beverton-Holt parameter (1/alpha is the maximum per capita production of recruits)
+beta      <- (5*h - 1) / (4*h*Ro)   # Beverton-Holt parameter (R approaches 1/beta as biomass increases)
+BH.df     <- data.frame(fg = rep(c("Browser", "Detritivore", "Excavator/Scraper", "Grazer", "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", "Piscivore", "Planktivore"), each = 1000), BHb = rep(seq(1,1000,1), 9), alpha = rep(alpha, each = 1000), beta = rep(beta, each = 1000))
 BH.df$BHr <- BH.df$BHb / (BH.df$alpha + BH.df$beta * BH.df$BHb)
-ggplot() + geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1, alpha = 0.8) + labs(x = "Spawning stock biomass", y = "Recruits") + scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7","#000000")) + scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + theme_classic() + theme(legend.title = element_blank(), legend.position = c(0.9,0.65))
+ggplot() + 
+     geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1, alpha = 0.8) + 
+     labs(x = "Spawning stock biomass", y = "Recruits") + 
+     scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7","#000000")) + 
+     scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + 
+     theme_classic() + 
+     theme(legend.title = element_blank(), legend.position = c(0.9,0.65))
 
 # # get the abundance and biomass for each functional group in the absence of fishing
 # Ni.F0 <- colSums(N.ijt[,,1]) # abundance
@@ -170,50 +185,66 @@ ggplot() + geom_line(data=BH.df, aes(x = (BHb), y = (BHr), color = fg), size = 1
 
 max.effort <- 29 # maximum effort for each gear type. Units are arbitrary
 effort     <- seq(0, 1, length.out = 20) * max.effort # fishing effort to test
-nbs        <- 100 # number of times to run bootstrap
+nbs        <- 10 # number of times to run bootstrap
 
 # --------------------------------------------------- MODEL SCENARIO 1: ALL GEARS ---------------------------------------------------
 gear.mgmt.1 <- c(1,1,1) # all gears used
 scen.1      <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.1.out  <- calc_summary_indices(N.ijte = scen.1[[1]], B.ijte = scen.1[[2]], cN.ijte = scen.1[[3]], cB.ijte = scen.1[[4]], t, L.mid, Lmat, nspecies)
-effort.1.bs <- c(6.105263, 12.210526, 19.842105) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.211, 0.421, 0.684)
+effort.1.bs <- c(7.25, 14.5, 21.75)
+
 scen.1.bs   <- run_bsmodel(nbs, landings, uvc, effort.1.bs, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+plot1 <- ggplot() + 
+     geom_line(aes(x = effort/max.effort, y = scen.1.out[[1]])) +
+     geom_point(aes(x=effort.1.bs/max.effort, y=scen.1.bs[[1]]$B.mu)) +
+     geom_errorbar(aes(x=effort.1.bs/max.effort,
+                       ymin=scen.1.bs[[1]]$B.lo,
+                       ymax=scen.1.bs[[1]]$B.up), width = 0.05)
 
 # --------------------------------------------------- MODEL SCENARIO 2: NO LINE FISHING ---------------------------------------------------
 gear.mgmt.2 <- c(0,1,1) # No hook-and-line fishing
 scen.2      <- run_model(effort, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.2.out  <- calc_summary_indices(N.ijte = scen.2[[1]], B.ijte = scen.2[[2]], cN.ijte = scen.2[[3]], cB.ijte = scen.2[[4]],  t, L.mid, Lmat, nspecies)
-effort.2.bs <- c(6.105263, 12.210526, 19.842105) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.211, 0.421, 0.684)
+effort.2.bs <- c(7.25, 14.5, 21.75)
+
+scen.2.bs   <- run_bsmodel(nbs, landings, uvc, effort.2.bs, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+plot1 +
+     geom_line(aes(x = effort/max.effort, y = scen.2.out[[1]]), color='red') +
+     geom_point(aes(x = effort.2.bs/max.effort, y = scen.2.bs[[1]]$B.mu), color='red') +
+     geom_errorbar(aes(x=effort.2.bs/max.effort,
+                       ymin=scen.2.bs[[1]]$B.lo,
+                       ymax=scen.2.bs[[1]]$B.up), width = 0.05, color='red')
+
 
 # --------------------------------------------------- MODEL SCENARIO 3: NO NET FISHING ---------------------------------------------------
 gear.mgmt.3 <- c(1,0,1) # No net fishing
 scen.3      <- run_model(effort, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.3.out  <- calc_summary_indices(N.ijte = scen.3[[1]], B.ijte = scen.3[[2]], cN.ijte = scen.3[[3]], cB.ijte = scen.3[[4]], t, L.mid, Lmat, nspecies)
-effort.3.bs <- c(7.631579, 12.210526, 22.894737) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.263, 0.421, 0.789)
+effort.3.bs <- c(7.25, 14.5, 21.75)
 
 # --------------------------------------------------- MODEL SCENARIO 4: NO SPEAR FISHING ---------------------------------------------------
 gear.mgmt.4 <- c(1,1,0) # No spear fishing
 scen.4      <- run_model(effort, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.4.out  <- calc_summary_indices(N.ijte = scen.4[[1]], B.ijte = scen.4[[2]], cN.ijte = scen.4[[3]], cB.ijte = scen.4[[4]], t, L.mid, Lmat, nspecies)
-effort.4.bs <- c(6.105263, 10.684211, 18.315789) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.211, 0.368, 0.632)
+effort.4.bs <- c(7.25, 14.5, 21.75)
 
 # --------------------------------------------------- MODEL SCENARIO 5: LINE FISHING ---------------------------------------------------
 gear.mgmt.5 <- c(1,0,0) # Only hook-and-line fishing
 scen.5      <- run_model(effort, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.5.out  <- calc_summary_indices(N.ijte = scen.5[[1]], B.ijte = scen.5[[2]], cN.ijte = scen.5[[3]], cB.ijte = scen.5[[4]], t, L.mid, Lmat, nspecies)
-effort.5.bs <- c(7.631579, 12.210526, 21.368421) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.263, 0.421, 0.737)
+effort.5.bs <- c(7.25, 14.5, 21.75)
 
 # --------------------------------------------------- MODEL SCENARIO 6: NET FISHING ---------------------------------------------------
 gear.mgmt.6 <- c(0,1,0) # Only net fishing
 scen.6      <- run_model(effort, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.6.out  <- calc_summary_indices(N.ijte = scen.6[[1]], B.ijte = scen.6[[2]], cN.ijte = scen.6[[3]], cB.ijte = scen.6[[4]],  t, L.mid, Lmat, nspecies)
-effort.6.bs <- c(6.105263, 9.157895, 16.789474) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.211, 0.316, 0.579)
+effort.6.bs <- c(7.25, 14.5, 21.75)
 
 # --------------------------------------------------- MODEL SCENARIO 7: SPEAR FISHING ---------------------------------------------------
 gear.mgmt.7 <- c(0,0,1) # Only spear fishing
 scen.7      <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
 scen.7.out  <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], t, L.mid, Lmat, nspecies)
-effort.7.bs <- c(7.631579, 15.263158, 27.473684) # effort levels that reach 0.35B0, 0.5B0, and 0.65B0 (relative effort 0.263, 0.526, 0.947)
+effort.7.bs <- c(7.25, 14.5, 21.75)
 
 # --------------------------------------------------- MODEL SENSITIVITY ANALYSES ---------------------------------------------------
 # First set of sensitivity analyses run simulations with key parameters (i.e., alpha, beta, mu, sigma, Ge, and tau) increased or
