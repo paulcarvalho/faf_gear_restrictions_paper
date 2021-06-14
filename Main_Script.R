@@ -36,6 +36,8 @@ library(data.table)
 library(docstring)
 library(roxygen2)
 library(Rmisc)
+library(foreach)
+library(doParallel)
 
 # Load data 
 landings  <- read.csv("landings.csv") # fisheries-dependent data
@@ -100,16 +102,30 @@ suit <- calc_suit(M2_prefs, tau, nsc, nspecies, sc_Linf)
 M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # natural mortality (excluding predation)
 
 # bootstrap (resample) landings and uvc data to calculate base catchability*selectivity 
-num.bs   <- 100 # number of bootstraps
-base.bs <- array(NA, dim = c(nsc, nspecies, 3, num.bs)) 
-for(j in 1:num.bs){
-     q.tmp <- bootstrap_qs(landings, uvc, resample = TRUE)
-     q.tmp <- array(as.numeric(unlist(q.tmp)), dim = c(nsc, nspecies, 3))
-     base.bs[, , , j] <- q.tmp
+n.bs    <- 30
+n.cores <- 5
+cluster <- parallel::makeCluster(n.cores, type = "PSOCK"); registerDoParallel(cluster)
+ptm     <- proc.time()
+q.tmp   <- foreach(i = 1:n.bs, .combine = 'rbind') %dopar% {
+               library(dplyr)
+               library(data.table)
+               library(splitstackshape)
+               library(plotrix)
+               library(fitdistrplus)
+               library(tidyr)
+               q.tmp <- bootstrap_qs(landings, uvc, resample = TRUE)
+               q.tmp <- array(as.numeric(unlist(q.tmp)), dim = c(nsc, nspecies, 3))
 }
-test.hook  <- apply(base.bs[, , 1, ], c(1, 2), mean); test.hook  <- test.hook/sum(test.hook)
-test.net   <- apply(base.bs[, , 2, ], c(1, 2), mean); test.net   <- test.net/sum(test.net)
-test.spear <- apply(base.bs[, , 3, ], c(1, 2), mean); test.spear <- test.spear/sum(test.spear)
+proc.time() - ptm
+parallel::stopCluster(cluster)
+q.tmp2 <- array(NA, dim = c(nsc, nspecies, 3, n.bs))
+for(i in 1:n.bs){
+     tmp <- array(as.array(q.tmp)[i, ], dim = c(nsc, nspecies, 3))
+     q.tmp2[, , , i] <- tmp 
+}
+test.hook  <- apply(q.tmp2[, , 1, ], c(1, 2), mean); test.hook  <- test.hook/sum(test.hook)
+test.net   <- apply(q.tmp2[, , 2, ], c(1, 2), mean); test.net   <- test.net/sum(test.net)
+test.spear <- apply(q.tmp2[, , 3, ], c(1, 2), mean); test.spear <- test.spear/sum(test.spear)
 q <- array(c(test.hook, test.net, test.spear), dim = c(nsc, nspecies, 3)) 
 
 # run fisheries model
