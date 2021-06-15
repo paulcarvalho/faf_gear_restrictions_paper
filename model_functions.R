@@ -1,7 +1,7 @@
 # Functions
 # Author: Paul Carvalho
 
-run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min){
+run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0){
   #' run_bsmodel
   #' @description Run the fisheries model and resample landings and UVC data via nonparametric bootstrapping to quantify uncertainty in catchability (function group/species) and selectivity (size).
   #'
@@ -28,6 +28,7 @@ run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies,
   #' @param weight see run_model() description
   #' @param sc_Linf see run_model() description
   #' @param phi.min see run_model() description
+  #' @param N0 see run_model() description
   #'
   #' @return List with (1) overall mean and confidence intervals for abundance, biomass, and catch and (2) mean and confidence intervals of abundance, biomass, and catch for each functional group/species.
 
@@ -36,34 +37,54 @@ run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies,
   fg.vals  <- NULL
   
   # nonparametric bootstrap resample landings and UVC data and rerun model
-  for(i in 1:nbs){
+  num.cores <- parallel::detectCores() - 1
+  my.cluster <- parallel::makeCluster(num.cores, type = "PSOCK")
+  registerDoParallel(my.cluster)
+  
+  results <- foreach(i = 1:nbs, .combine = 'rbind', .multicombine = TRUE) %dopar% {
+    source('model_functions.R')
+    source('run_model.R')
+    library(dplyr)
+    library(data.table)
+    library(splitstackshape)
+    library(plotrix)
+    library(fitdistrplus)
+    library(tidyr)
+    library(foreach)
+    library(doParallel)
     q.new <- NULL
     q.new <- bootstrap_qs(landings, uvc, resample = TRUE) # resample data via bootstrapping and generate bootstrapped catchability*selectivity parameters
     q.new <- array(as.numeric(unlist(q.new)), dim = c(nsc, nspecies, 3)) # turn list into array
     
-    print(i)
-    # test1 <- heatmap(t(q.new[,,1]), Colv=NA, Rowv=NA, scale="none", margins=c(9.5,9.5))
-    # test2 <- heatmap(t(q.new[,,1]), Colv=NA, Rowv=NA, scale="none", margins=c(9.5,9.5))
-    
-    run.i <- run_model(effort = effort.bs, gear.mgmt = gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q.new, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+    run.i <- run_model(effort = effort.bs, gear.mgmt = gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q.new, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
     # Total
     total.N  <- colSums(run.i[[1]][, , t, ], dims = 2)
     total.B  <- colSums(run.i[[2]][, , t, ], dims = 2)
     total.CN <- colSums(run.i[[3]][, , t, ], dims = 2)
     total.CB <- colSums(run.i[[4]][, , t, ], dims = 2)
     tmp1     <- data.frame(i = i, effort = effort.bs, Ntot = total.N, Btot = total.B, CNtot = total.CN, CBtot = total.CB)
-    tot.vals <- rbind(tot.vals, tmp1)
+    #tot.vals <- rbind(tot.vals, tmp1)
     # Functional group
     fg.N    <- as.vector(colSums(run.i[[1]][, , t, ]))
     fg.B    <- as.vector(colSums(run.i[[2]][, , t, ]))
     fg.CN   <- as.vector(colSums(run.i[[3]][, , t, ]))
     fg.CB   <- as.vector(colSums(run.i[[4]][, , t, ]))
     tmp2    <- data.frame(i = i, effort = rep(effort.bs, each = nspecies), fg = rep(c("Browser", "Detritivore", "Excavator/Scraper", "Grazer", "Macro-invertivore", "Micro-invertivore", "Pisci-invertivore", "Piscivore", "Planktivore"), 3), N = fg.N, B = fg.B, CN = fg.CN, CB = fg.CB)
-    fg.vals <- rbind(fg.vals, tmp2) 
+    #fg.vals <- rbind(fg.vals, tmp2)
+    
+    list(tmp1, tmp2)
   }
+  parallel::stopCluster()
+  
+  for(i in 1:nbs){
+    tmp3 <- rbind(tmp3, results[i, 1][[1]]) 
+    tmp4 <- rbind(tmp4, results[i, 2][[1]])
+  }
+  
   # calculate summary stats
-  tmp3 <- tot.vals %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort) %>% dplyr::summarise(N.mu = mean(Ntot), N.sd = sd(Ntot), B.mu = mean(Btot), B.sd = sd(Btot), CN.mu = mean(CNtot), CN.sd = sd(CNtot), CB.mu = mean(CBtot), CB.sd = sd(CBtot)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se) %>% dplyr::select(effort, N.mu, N.up, N.lo, B.mu, B.up, B.lo, CN.mu, CN.up, CN.lo, CB.mu, CB.up, CB.lo)
-  tmp4 <- fg.vals %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort, fg) %>% dplyr::summarise(N.mu = mean(N), N.sd = sd(N), B.mu = mean(B), B.sd = sd(B), CN.mu = mean(CN), CN.sd = sd(CN), CB.mu = mean(CB), CB.sd = sd(CB)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se)
+  tmp3 <- tmp3 %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort) %>% dplyr::summarise(N.mu = mean(Ntot), N.sd = sd(Ntot), B.mu = mean(Btot), B.sd = sd(Btot), CN.mu = mean(CNtot), CN.sd = sd(CNtot), CB.mu = mean(CBtot), CB.sd = sd(CBtot)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se) %>% dplyr::select(effort, N.mu, N.up, N.lo, B.mu, B.up, B.lo, CN.mu, CN.up, CN.lo, CB.mu, CB.up, CB.lo)
+  tmp4 <- tmp4 %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort, fg) %>% dplyr::summarise(N.mu = mean(N), N.sd = sd(N), B.mu = mean(B), B.sd = sd(B), CN.mu = mean(CN), CN.sd = sd(CN), CB.mu = mean(CB), CB.sd = sd(CB)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se)
+  
   return(list(tmp3, tmp4))
 }
 
@@ -460,16 +481,17 @@ bootstrap_qs <- function(landings, uvc, resample = NULL){
     uvc.tmp <- setDT(expandRows(uvc.tmp, 'abundance'))
   } else if(resample == TRUE){
     # Resample landings data via bootstrapping
-    trip.sample <- landings.tmp %>% 
+    trip.sample <- landings.tmp %>% # Save trip IDs and gear and number of fish caught
                    dplyr::group_by(trip_id, fishing_ground, gear_cat1) %>% 
-                   dplyr::summarize(size = sum(abundance)) # Save trip IDs and gear and number of fish caught
+                   dplyr::summarize(size = sum(abundance)) 
     landings.bs <- NULL # empty dataframe to fill during resampling of landings data
-    for(i in 1:length(trip.sample$trip_id)){ # Iterate through trips and resample from each trip
-      trip.i           <- trip.sample$trip_id[i] # index for a single trip
+    for(i in 1:length(trip.sample$trip_id)){       # iterate through trips and resample from each trip
+      trip.i           <- trip.sample$trip_id[i]   # index for a single trip
       gear.i           <- trip.sample$gear_cat1[i] # get gear for trip.i
-      sample.i         <- landings.tmp %>% filter(trip_id == trip.i) %>% d
-                          plyr::select(fg, size_cm, bin_5cm) %>% 
-                          filter(size_cm >= 10) # save fg and sizes caught for trip.i
+      sample.i         <- landings.tmp %>%         # save fg and sizes caught for trip.i
+                          dplyr::filter(trip_id == trip.i) %>% 
+                          dplyr::select(fg, size_cm, bin_5cm) %>% 
+                          filter(size_cm >= 10) 
       index.bs         <- sample(x = 1:length(sample.i$fg), size = length(sample.i$fg), replace = TRUE) # sample from trip.i with replacement
       tmp.bs           <- sample.i[index.bs,] # get functional froups and size classes for new sample
       tmp.bs$trip_id   <- trip.i
