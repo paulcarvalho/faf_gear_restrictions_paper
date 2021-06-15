@@ -105,7 +105,7 @@ M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # 
 n.bs    <- 30
 n.cores <- 5
 cluster <- parallel::makeCluster(n.cores, type = "PSOCK"); registerDoParallel(cluster)
-ptm     <- proc.time()
+# ptm     <- proc.time()
 q.tmp   <- foreach(i = 1:n.bs, .combine = 'rbind') %dopar% {
                library(dplyr)
                library(data.table)
@@ -116,7 +116,7 @@ q.tmp   <- foreach(i = 1:n.bs, .combine = 'rbind') %dopar% {
                q.tmp <- bootstrap_qs(landings, uvc, resample = TRUE)
                q.tmp <- array(as.numeric(unlist(q.tmp)), dim = c(nsc, nspecies, 3))
 }
-proc.time() - ptm
+# proc.time() - ptm
 parallel::stopCluster(cluster)
 q.tmp2 <- array(NA, dim = c(nsc, nspecies, 3, n.bs))
 for(i in 1:n.bs){
@@ -205,11 +205,11 @@ nbs        <- 10 # number of times to run bootstrap
 
 # --------------------------------------------------- MODEL SCENARIO 1: ALL GEARS ---------------------------------------------------
 gear.mgmt.1 <- c(1,1,1) # all gears used
-scen.1      <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.1      <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.1.out  <- calc_summary_indices(N.ijte = scen.1[[1]], B.ijte = scen.1[[2]], cN.ijte = scen.1[[3]], cB.ijte = scen.1[[4]], t, L.mid, Lmat, nspecies)
 effort.1.bs <- c(7.25, 14.5, 21.75)
 
-scen.1.bs   <- run_bsmodel(nbs, landings, uvc, effort.1.bs, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min)
+scen.1.bs   <- run_bsmodel(nbs, landings, uvc, effort.1.bs, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 plot1 <- ggplot() + 
      geom_line(aes(x = effort/max.effort, y = scen.1.out[[1]])) +
      geom_point(aes(x=effort.1.bs/max.effort, y=scen.1.bs[[1]]$B.mu)) +
