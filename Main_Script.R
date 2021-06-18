@@ -220,23 +220,6 @@ effort.4.bs <- c(7.25, 14.5, 21.75)
 #ptm<-proc.time()
 scen.4.bs   <- run_bsmodel(nbs, landings, uvc, effort.4.bs, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 #proc.time()-ptm
-plot1 +
-     geom_line(aes(x = effort/max.effort, y = scen.2.out[[1]]), color='red') +
-     geom_point(aes(x = effort.2.bs/max.effort, y = scen.2.bs[[1]]$B.mu), color='red') +
-     geom_line(aes(x = effort/max.effort, y = scen.3.out[[1]]), color='blue') +
-     geom_point(aes(x = effort.3.bs/max.effort, y = scen.3.bs[[1]]$B.mu), color='blue') +
-     geom_line(aes(x = effort/max.effort, y = scen.4.out[[1]]), color='green') +
-     geom_point(aes(x = effort.4.bs/max.effort, y = scen.4.bs[[1]]$B.mu), color='green') +
-     geom_errorbar(aes(x=effort.2.bs/max.effort,
-                       ymin=scen.2.bs[[1]]$B.lo,
-                       ymax=scen.2.bs[[1]]$B.up), width = 0.05, color='red') +
-     geom_errorbar(aes(x=effort.3.bs/max.effort,
-                       ymin=scen.3.bs[[1]]$B.lo,
-                       ymax=scen.3.bs[[1]]$B.up), width = 0.05, color='blue') +
-     geom_errorbar(aes(x=effort.4.bs/max.effort,
-                       ymin=scen.4.bs[[1]]$B.lo,
-                       ymax=scen.4.bs[[1]]$B.up), width = 0.05, color='green')
-
 
 # --------------------------------------------------- MODEL SCENARIO 5: LINE FISHING ---------------------------------------------------
 gear.mgmt.5 <- c(1,0,0) # Only hook-and-line fishing
@@ -267,6 +250,8 @@ effort.7.bs <- c(7.25, 14.5, 21.75)
 # ptm<-proc.time()
 scen.7.bs   <- run_bsmodel(nbs, landings, uvc, effort.7.bs, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 # proc.time()-ptm
+
+
 
 # --------------------------------------------------- MODEL SENSITIVITY ANALYSES ---------------------------------------------------
 # First set of sensitivity analyses run simulations with key parameters (i.e., alpha, beta, mu, sigma, Ge, and tau) increased or

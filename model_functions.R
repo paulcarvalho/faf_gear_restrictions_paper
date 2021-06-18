@@ -32,10 +32,6 @@ run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies,
   #'
   #' @return List with (1) overall mean and confidence intervals for abundance, biomass, and catch and (2) mean and confidence intervals of abundance, biomass, and catch for each functional group/species.
 
-  # empty dataframe to store data
-  tot.vals <- NULL
-  fg.vals  <- NULL
-  
   # nonparametric bootstrap resample landings and UVC data and rerun model
   num.cores <- parallel::detectCores() - 1
   my.cluster <- parallel::makeCluster(num.cores, type = "PSOCK")
@@ -74,7 +70,10 @@ run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies,
     
     list(tmp1, tmp2)
   }
-  parallel::stopCluster()
+  parallel::stopCluster(my.cluster)
+  
+  tmp3 <- NULL
+  tmp4 <- NULL
   
   for(i in 1:nbs){
     tmp3 <- rbind(tmp3, results[i, 1][[1]]) 
@@ -485,15 +484,17 @@ bootstrap_qs <- function(landings, uvc, resample = NULL){
                    dplyr::group_by(trip_id, fishing_ground, gear_cat1) %>% 
                    dplyr::summarize(size = sum(abundance)) 
     landings.bs <- NULL # empty dataframe to fill during resampling of landings data
-    for(i in 1:length(trip.sample$trip_id)){       # iterate through trips and resample from each trip
-      trip.i           <- trip.sample$trip_id[i]   # index for a single trip
-      gear.i           <- trip.sample$gear_cat1[i] # get gear for trip.i
+    for(i in 1:length(trip.sample$trip_id)){             # iterate through trips and resample from all catch from each fishing ground
+      trip.i           <- trip.sample$trip_id[i]         # index for a single trip
+      gear.i           <- trip.sample$gear_cat1[i]       # get gear for trip.i
+      fish.grnd.i      <- trip.sample$fishing_ground[i]  # get fishing ground for trip.i
       sample.i         <- landings.tmp %>%         # save fg and sizes caught for trip.i
-                          dplyr::filter(trip_id == trip.i) %>% 
+                          # dplyr::filter(trip_id == trip.i) %>%
+                          dplyr::filter(fishing_ground == fish.grnd.i & gear_cat1 == gear.i) %>%
                           dplyr::select(fg, size_cm, bin_5cm) %>% 
                           filter(size_cm >= 10) 
-      index.bs         <- sample(x = 1:length(sample.i$fg), size = length(sample.i$fg), replace = TRUE) # sample from trip.i with replacement
-      tmp.bs           <- sample.i[index.bs,] # get functional froups and size classes for new sample
+      index.bs         <- sample(x = 1:length(sample.i$fg), size = trip.sample$size[i], replace = TRUE) # sample from trip.i with replacement
+      tmp.bs           <- sample.i[index.bs,] # get functional groups and size classes for new sample
       tmp.bs$trip_id   <- trip.i
       tmp.bs$gear_cat1 <- gear.i
       landings.bs      <- rbind(landings.bs, tmp.bs)
@@ -503,9 +504,11 @@ bootstrap_qs <- function(landings, uvc, resample = NULL){
     # Resample UVC data via bootstrapping
     site.sample <- uvc.tmp %>% dplyr::mutate(site_tran = paste(site_name, transect)) %>% dplyr::select(site_name, site_tran, fg, size_5cm_bin, abundance) %>% dplyr::group_by(site_name, site_tran) %>% dplyr::summarize(size = sum(abundance)) # Save site and transects and number of fish observed
     uvc.bs      <- NULL # empty dataframe to fill during resampling of landings data
-    for(i in 1:length(site.sample$site_tran)){ # Iterate through site_trans and resample from fish observed at each site
+    for(i in 1:length(site.sample$site_tran)){     # Iterate through site_trans and resample from fish observed at each site
       site.i           <- site.sample$site_name[i] # save site name for site_tran[i]
-      sample.i         <- uvc.tmp %>% filter(site_name == site.i) %>% dplyr::select(fg, size_5cm_bin, abundance) # save all fish observed at site.i
+      sample.i         <- uvc.tmp %>%              # save all fish observed at site.i
+                          dplyr::filter(site_name == site.i) %>% 
+                          dplyr::select(fg, size_5cm_bin, abundance) 
       sample.i         <- setDT(expandRows(sample.i, 'abundance')) # expand table based on abundance
       index.bs         <- sample(x = 1:length(sample.i$fg), size = site.sample$size[i], replace = TRUE) # sample indexes from all fish observed at site.i
       tmp.bs           <- sample.i[index.bs, ] # save the functional groups and size classes that were sampled
