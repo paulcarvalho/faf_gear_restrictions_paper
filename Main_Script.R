@@ -173,8 +173,10 @@ ggplot() +
 
 # --------------------------------------------------- MODEL SETTINGS ---------------------------------------------------
 
-max.effort <- 29 # maximum effort for each gear type. Units are arbitrary
+max.effort <- 40 # maximum effort for each gear type. Units are arbitrary
 effort     <- seq(0, 1, length.out = 20) * max.effort # fishing effort to test
+tmp.effort <- c(max.effort * 0.25, max.effort * 0.5, max.effort * 0.75)
+effort[c(6, 10, 15)] <- tmp.effort
 nbs        <- 100 # number of times to run bootstrap
 
 # --------------------------------------------------- MODEL SCENARIO 1: ALL GEARS ---------------------------------------------------
@@ -182,21 +184,15 @@ gear.mgmt.1 <- c(1,1,1) # all gears used
 scen.1      <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.1.out  <- calc_summary_indices(N.ijte = scen.1[[1]], B.ijte = scen.1[[2]], cN.ijte = scen.1[[3]], cB.ijte = scen.1[[4]], t, L.mid, Lmat, nspecies)
 
-effort.1.bs <- c(7.25, 14.5, 21.75)
+effort.1.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 scen.1.bs   <- run_bsmodel(nbs, landings, uvc, effort.1.bs, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-plot1 <- ggplot() + 
-     geom_line(aes(x = effort/max.effort, y = scen.1.out[[1]])) +
-     geom_point(aes(x=effort.1.bs/max.effort, y=scen.1.bs[[1]]$B.mu)) +
-     geom_errorbar(aes(x=effort.1.bs/max.effort,
-                       ymin=scen.1.bs[[1]]$B.lo,
-                       ymax=scen.1.bs[[1]]$B.up), width = 0.05)
 
 # --------------------------------------------------- MODEL SCENARIO 2: NO LINE FISHING ---------------------------------------------------
 gear.mgmt.2 <- c(0,1,1) # No hook-and-line fishing
 scen.2      <- run_model(effort, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.2.out  <- calc_summary_indices(N.ijte = scen.2[[1]], B.ijte = scen.2[[2]], cN.ijte = scen.2[[3]], cB.ijte = scen.2[[4]],  t, L.mid, Lmat, nspecies)
 
-effort.2.bs <- c(7.25, 14.5, 21.75)
+effort.2.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 # ptm<-proc.time()
 scen.2.bs   <- run_bsmodel(nbs, landings, uvc, effort.2.bs, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 # proc.time()-ptm
@@ -206,7 +202,7 @@ gear.mgmt.3 <- c(1,0,1) # No net fishing
 scen.3      <- run_model(effort, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.3.out  <- calc_summary_indices(N.ijte = scen.3[[1]], B.ijte = scen.3[[2]], cN.ijte = scen.3[[3]], cB.ijte = scen.3[[4]], t, L.mid, Lmat, nspecies)
 
-effort.3.bs <- c(7.25, 14.5, 21.75)
+effort.3.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 # ptm<-proc.time()
 scen.3.bs   <- run_bsmodel(nbs, landings, uvc, effort.3.bs, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 # proc.time()-ptm
@@ -216,7 +212,7 @@ gear.mgmt.4 <- c(1,1,0) # No spear fishing
 scen.4      <- run_model(effort, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.4.out  <- calc_summary_indices(N.ijte = scen.4[[1]], B.ijte = scen.4[[2]], cN.ijte = scen.4[[3]], cB.ijte = scen.4[[4]], t, L.mid, Lmat, nspecies)
 
-effort.4.bs <- c(7.25, 14.5, 21.75)
+effort.4.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 #ptm<-proc.time()
 scen.4.bs   <- run_bsmodel(nbs, landings, uvc, effort.4.bs, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 #proc.time()-ptm
@@ -226,7 +222,7 @@ gear.mgmt.5 <- c(1,0,0) # Only hook-and-line fishing
 scen.5      <- run_model(effort, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.5.out  <- calc_summary_indices(N.ijte = scen.5[[1]], B.ijte = scen.5[[2]], cN.ijte = scen.5[[3]], cB.ijte = scen.5[[4]], t, L.mid, Lmat, nspecies)
 
-effort.5.bs <- c(7.25, 14.5, 21.75)
+effort.5.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 # ptm<-proc.time()
 scen.5.bs   <- run_bsmodel(nbs, landings, uvc, effort.5.bs, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 # proc.time()-ptm
@@ -236,7 +232,7 @@ gear.mgmt.6 <- c(0,1,0) # Only net fishing
 scen.6      <- run_model(effort, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.6.out  <- calc_summary_indices(N.ijte = scen.6[[1]], B.ijte = scen.6[[2]], cN.ijte = scen.6[[3]], cB.ijte = scen.6[[4]],  t, L.mid, Lmat, nspecies)
 
-effort.6.bs <- c(7.25, 14.5, 21.75)
+effort.6.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 # ptm<-proc.time()
 scen.6.bs   <- run_bsmodel(nbs, landings, uvc, effort.6.bs, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 # proc.time()-ptm
@@ -246,10 +242,17 @@ gear.mgmt.7 <- c(0,0,1) # Only spear fishing
 scen.7      <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.7.out  <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], t, L.mid, Lmat, nspecies)
 
-effort.7.bs <- c(7.25, 14.5, 21.75)
+effort.7.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 # ptm<-proc.time()
 scen.7.bs   <- run_bsmodel(nbs, landings, uvc, effort.7.bs, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 # proc.time()-ptm
+
+ggplot() +
+        geom_line(aes(x = effort/max.effort, y = scen.7.out[[1]])) +
+        geom_point(aes(x=effort.7.bs/max.effort, y=scen.7.bs[[1]]$B.mu)) +
+        geom_errorbar(aes(x=effort.7.bs/max.effort,
+                          ymin=scen.7.bs[[1]]$B.lo,
+                          ymax=scen.7.bs[[1]]$B.up), width = 0.05)
 
 
 
@@ -265,54 +268,30 @@ scen.7.bs   <- run_bsmodel(nbs, landings, uvc, effort.7.bs, gear.mgmt.7, nsc, ns
 # --------------------------------------------------- MODEL SENSITIVITY - NO FISHING ---------------------------------------------------
 
 base.effort <- effort
-
-base.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                        suit, ration, other, weight, sc_Linf, phi.min)
-
-
-base.sa <- calc_sensitivity_indices(N.ijte = base.model[[1]], B.ijte = base.model[[2]], 
-							 cN.ijte = base.model[[3]], cB.ijte = base.model[[4]], 
-							 L.mid, Lmat, tau, base.effort)
-
+base.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
+base.sa <- calc_sensitivity_indices(N.ijte = base.model[[1]], B.ijte = base.model[[2]], cN.ijte = base.model[[3]], cB.ijte = base.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - alpha ---------------------------------------------------
 
 alpha.hi <- alpha + alpha*0.1
 alpha.lo <- alpha - alpha*0.1
 
-alphaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha.hi, beta,
-                           suit, ration, other, weight, sc_Linf, phi.min)
+alphaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha.hi, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
+alphaHi.sa <- calc_sensitivity_indices(N.ijte = alphaHi.model[[1]], B.ijte = alphaHi.model[[2]], cN.ijte = alphaHi.model[[3]], cB.ijte = alphaHi.model[[4]], L.mid, Lmat, tau, base.effort)
 
-alphaHi.sa <- calc_sensitivity_indices(N.ijte = alphaHi.model[[1]], B.ijte = alphaHi.model[[2]], 
-							    cN.ijte = alphaHi.model[[3]], cB.ijte = alphaHi.model[[4]],
-							    L.mid, Lmat, tau, base.effort)
-
-alphaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha.lo, beta,
-                           suit, ration, other, weight, sc_Linf, phi.min)
-
-alphaLo.sa <- calc_sensitivity_indices(N.ijte = alphaLo.model[[1]], B.ijte = alphaLo.model[[2]], 
-							    cN.ijte = alphaLo.model[[3]], cB.ijte = alphaLo.model[[4]],
-							    L.mid, Lmat, tau, base.effort)
-
+alphaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha.lo, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
+alphaLo.sa <- calc_sensitivity_indices(N.ijte = alphaLo.model[[1]], B.ijte = alphaLo.model[[2]], cN.ijte = alphaLo.model[[3]], cB.ijte = alphaLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - beta ---------------------------------------------------
 
 beta.hi <- beta + beta*0.1
 beta.lo <- beta - beta*0.1
 
-betaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta.hi,
-                          suit, ration, other, weight, sc_Linf, phi.min)
+betaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta.hi, suit, ration, other, weight, sc_Linf, phi.min, N0)
+betaHi.sa <- calc_sensitivity_indices(N.ijte = betaHi.model[[1]], B.ijte = betaHi.model[[2]], cN.ijte = betaHi.model[[3]], cB.ijte = betaHi.model[[4]], L.mid, Lmat, tau, base.effort)
 
-betaHi.sa <- calc_sensitivity_indices(N.ijte = betaHi.model[[1]], B.ijte = betaHi.model[[2]], 
-							   cN.ijte = betaHi.model[[3]], cB.ijte = betaHi.model[[4]],
-							   L.mid, Lmat, tau, base.effort)
-
-betaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta.lo,
-                          suit, ration, other, weight, sc_Linf, phi.min)
-
-betaLo.sa <- calc_sensitivity_indices(N.ijte = betaLo.model[[1]], B.ijte = betaLo.model[[2]], 
-							   cN.ijte = betaLo.model[[3]], cB.ijte = betaLo.model[[4]],
-							   L.mid, Lmat, tau, base.effort)
+betaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta.lo, suit, ration, other, weight, sc_Linf, phi.min, N0)
+betaLo.sa <- calc_sensitivity_indices(N.ijte = betaLo.model[[1]], B.ijte = betaLo.model[[2]], cN.ijte = betaLo.model[[3]], cB.ijte = betaLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - mu ---------------------------------------------------
 
@@ -325,20 +304,11 @@ M2_prefs_muLo <- calc_prefs(L.mid, nsc, nspecies, mu.lo, sigma, weight, sc_Linf)
 suit_muHi <- calc_suit(M2_prefs_muHi, tau, nsc, nspecies, sc_Linf)
 suit_muLo <- calc_suit(M2_prefs_muLo, tau, nsc, nspecies, sc_Linf)
 
-muHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                        suit_muHi, ration, other, weight, sc_Linf, phi.min)
+muHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_muHi, ration, other, weight, sc_Linf, phi.min, N0)
+muHi.sa <- calc_sensitivity_indices(N.ijte = muHi.model[[1]], B.ijte = muHi.model[[2]], cN.ijte = muHi.model[[3]], cB.ijte = muHi.model[[4]], L.mid, Lmat, tau, base.effort)
 
-muHi.sa <- calc_sensitivity_indices(N.ijte = muHi.model[[1]], B.ijte = muHi.model[[2]], 
-							 cN.ijte = muHi.model[[3]], cB.ijte = muHi.model[[4]],
-							 L.mid, Lmat, tau, base.effort)
-
-muLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                        suit_muLo, ration, other, weight, sc_Linf, phi.min)
-
-muLo.sa <- calc_sensitivity_indices(N.ijte = muLo.model[[1]], B.ijte = muLo.model[[2]], 
-							 cN.ijte = muLo.model[[3]], cB.ijte = muLo.model[[4]],
-							 L.mid, Lmat, tau, base.effort)
-
+muLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_muLo, ration, other, weight, sc_Linf, phi.min, N0)
+muLo.sa <- calc_sensitivity_indices(N.ijte = muLo.model[[1]], B.ijte = muLo.model[[2]], cN.ijte = muLo.model[[3]], cB.ijte = muLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - sigma ---------------------------------------------------
 
@@ -351,20 +321,11 @@ M2_prefs_sigmaLo <- calc_prefs(L.mid, nsc, nspecies, mu, sigma.lo, weight, sc_Li
 suit_sigmaHi <- calc_suit(M2_prefs_sigmaHi, tau, nsc, nspecies, sc_Linf)
 suit_sigmaLo <- calc_suit(M2_prefs_sigmaLo, tau, nsc, nspecies, sc_Linf)
 
-sigmaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                           suit_sigmaHi, ration, other, weight, sc_Linf, phi.min)
+sigmaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_sigmaHi, ration, other, weight, sc_Linf, phi.min, N0)
+sigmaHi.sa <- calc_sensitivity_indices(N.ijte = sigmaHi.model[[1]], B.ijte = sigmaHi.model[[2]], cN.ijte = sigmaHi.model[[3]], cB.ijte = sigmaHi.model[[4]], L.mid, Lmat, tau, base.effort)
 
-sigmaHi.sa <- calc_sensitivity_indices(N.ijte = sigmaHi.model[[1]], B.ijte = sigmaHi.model[[2]], 
-							    cN.ijte = sigmaHi.model[[3]], cB.ijte = sigmaHi.model[[4]],
-							    L.mid, Lmat, tau, base.effort)
-
-sigmaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                           suit_sigmaLo, ration, other, weight, sc_Linf, phi.min)
-
-sigmaLo.sa <- calc_sensitivity_indices(N.ijte = sigmaLo.model[[1]], B.ijte = sigmaLo.model[[2]], 
-							    cN.ijte = sigmaLo.model[[3]], cB.ijte = sigmaLo.model[[4]],
-							    L.mid, Lmat, tau, base.effort)
-
+sigmaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_sigmaLo, ration, other, weight, sc_Linf, phi.min, N0)
+sigmaLo.sa <- calc_sensitivity_indices(N.ijte = sigmaLo.model[[1]], B.ijte = sigmaLo.model[[2]], cN.ijte = sigmaLo.model[[3]], cB.ijte = sigmaLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - Ge ---------------------------------------------------
 
@@ -374,20 +335,11 @@ ration.GeHi <- ration_outGeHi[[1]]
 ration_outGeLo <- calc_ration(k, Linf, nsc, nspecies, L.lower, L.upper, L.mid, W.a, W.b, phi.min, scale.Ge = -0.1)
 ration.GeLo <- ration_outGeLo[[1]]
 
-GeHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                        suit, ration.GeHi, other, weight, sc_Linf, phi.min)
+GeHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration.GeHi, other, weight, sc_Linf, phi.min, N0)
+GeHi.sa <- calc_sensitivity_indices(N.ijte = GeHi.model[[1]], B.ijte = GeHi.model[[2]], cN.ijte = GeHi.model[[3]], cB.ijte = GeHi.model[[4]], L.mid, Lmat, tau, base.effort)
 
-GeHi.sa <- calc_sensitivity_indices(N.ijte = GeHi.model[[1]], B.ijte = GeHi.model[[2]], 
-							 cN.ijte = GeHi.model[[3]], cB.ijte = GeHi.model[[4]],
-							 L.mid, Lmat, tau, base.effort)
-
-GeLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta,
-                        suit, ration.GeLo, other, weight, sc_Linf, phi.min)
-
-GeLo.sa <- calc_sensitivity_indices(N.ijte = GeLo.model[[1]], B.ijte = GeLo.model[[2]], 
-							 cN.ijte = GeLo.model[[3]], cB.ijte = GeLo.model[[4]],
-							 L.mid, Lmat, tau, base.effort)
-
+GeLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration.GeLo, other, weight, sc_Linf, phi.min, N0)
+GeLo.sa <- calc_sensitivity_indices(N.ijte = GeLo.model[[1]], B.ijte = GeLo.model[[2]], cN.ijte = GeLo.model[[3]], cB.ijte = GeLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - gear specification ---------------------------------------------------
 
@@ -426,19 +378,13 @@ q2.sa[,,3] <- calc_qs(L.mid, size_sel$mu[3], size_sel$sd[3], fg_cat$q_spear) # s
 
 # MODEL WITH 1 CM INCREASE
 # gear.mgmt.1 <- c(1,1,1) # all gears used
-q1sa.model <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q1.sa, alpha, beta,
-					    					suit, ration, other, weight, sc_Linf, phi.min)
-
-q1sa.out <- calc_summary_indices(N.ijte = q1sa.model[[1]], B.ijte = q1sa.model[[2]], cN.ijte = q1sa.model[[3]], cB.ijte = q1sa.model[[4]], 
-                                 t, L.mid, Lmat, nspecies)
+q1sa.model <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q1.sa, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
+q1sa.out <- calc_summary_indices(N.ijte = q1sa.model[[1]], B.ijte = q1sa.model[[2]], cN.ijte = q1sa.model[[3]], cB.ijte = q1sa.model[[4]], t, L.mid, Lmat, nspecies)
 
 # MODEL WITH 2 CM INCREASE
 # gear.mgmt.1 <- c(1,1,1) # all gears used
-q2sa.model <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q2.sa, alpha, beta,
-					    					suit, ration, other, weight, sc_Linf, phi.min)
-
-q2sa.out <- calc_summary_indices(N.ijte = q2sa.model[[1]], B.ijte = q2sa.model[[2]], cN.ijte = q2sa.model[[3]], cB.ijte = q2sa.model[[4]], 
-                                 t, L.mid, Lmat, nspecies)
+q2sa.model <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q2.sa, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
+q2sa.out <- calc_summary_indices(N.ijte = q2sa.model[[1]], B.ijte = q2sa.model[[2]], cN.ijte = q2sa.model[[3]], cB.ijte = q2sa.model[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- SAVE DATA ---------------------------------------------------
 
