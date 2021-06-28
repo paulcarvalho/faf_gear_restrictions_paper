@@ -488,8 +488,7 @@ bootstrap_qs <- function(landings, uvc, resample = NULL){
       trip.i           <- trip.sample$trip_id[i]         # index for a single trip
       gear.i           <- trip.sample$gear_cat1[i]       # get gear for trip.i
       fish.grnd.i      <- trip.sample$fishing_ground[i]  # get fishing ground for trip.i
-      sample.i         <- landings.tmp %>%         # save fg and sizes caught for trip.i
-                          # dplyr::filter(trip_id == trip.i) %>%
+      sample.i         <- landings.tmp %>%               # save fg and sizes caught from fishing ground i and gear i
                           dplyr::filter(fishing_ground == fish.grnd.i & gear_cat1 == gear.i) %>%
                           dplyr::select(fg, size_cm, bin_5cm) %>% 
                           filter(size_cm >= 10) 
