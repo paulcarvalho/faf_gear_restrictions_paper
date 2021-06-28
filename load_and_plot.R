@@ -190,10 +190,10 @@ for(i in 1:length(fg)){
    
    # create biomass plot for fg.i and all scenarios
    fg.plotB <- ggplot() +
-   	geom_line(data = fg.df, aes(x = effort.rel, y = biomass.rel, color = scenario), lwd = 0.5) +
-     geom_point(data = fg.ci, aes(x = effort.rel, y = biomass.rel, color = scenario), size = 0.75) +
-     geom_errorbar(data = fg.ci, aes(x = effort.rel, ymin = B.lo, ymax = B.up, color = scenario), lwd = 0.5, width = 0.01) +
-   	scale_y_continuous(expand = c(0,0), limits = c(0, 1)) +
+   	geom_line(data = fg.df, aes(x = effort.rel, y = biomass.rel, color = scenario), lwd = 0.35) +
+     geom_point(data = fg.ci, aes(x = effort.rel, y = biomass.rel, color = scenario), size = 0.25) +
+     geom_errorbar(data = fg.ci, aes(x = effort.rel, ymin = B.lo, ymax = B.up, color = scenario), lwd = 0.35, width = 0.02) +
+   	scale_y_continuous(expand = c(0,0), limits = c(0, 1.02)) +
 	scale_x_continuous(expand = c(0,0)) +
 	scale_color_manual(values = cbp2) +
    	labs(x = "", y = "", title = fg.i) +
@@ -204,10 +204,10 @@ for(i in 1:length(fg)){
    
    # create catch plot for fg.i and all scenarios
    fg.plotC <- ggplot() +
-   	geom_line(data = fg.df, aes(x = effort.rel, y = catch.rel, color = scenario), lwd = 0.5) +
-     geom_point(data = fg.ci, aes(x = effort.rel, y = catch.rel, color = scenario), size = 0.75) +
-     geom_errorbar(data = fg.ci, aes(x = effort.rel, ymin = CB.lo, ymax = CB.up, color = scenario), lwd = 0.5, width = 0.01) +
-   	scale_y_continuous(expand = c(0,0), limits = c(0,1)) +
+   	geom_line(data = fg.df, aes(x = effort.rel, y = catch.rel, color = scenario), lwd = 0.35) +
+     geom_point(data = fg.ci, aes(x = effort.rel, y = catch.rel, color = scenario), size = 0.25) +
+     geom_errorbar(data = fg.ci, aes(x = effort.rel, ymin = CB.lo, ymax = CB.up, color = scenario), lwd = 0.35, width = 0.02) +
+   	scale_y_continuous(expand = c(0,0), limits = c(0,1.02)) +
 	scale_x_continuous(expand = c(0,0)) +
 	scale_color_manual(values = cbp2) +
    	labs(x = "", y = "", title = fg.i) +
@@ -353,36 +353,33 @@ heat.hook <- heatmap.df %>%
 	dplyr::select(fg, sc, qs.hook) %>%
 	ggplot() +
 		geom_tile(aes(x = sc, y = fg, fill = qs.hook)) +
-		scale_fill_viridis_c() +
+		scale_fill_viridis_c(name = expression(qs[line])) +
 		labs(title = "Hook-and-line", x = "", y = "") +
 		scale_x_discrete(expand = c(0,0)) +
 		scale_y_discrete(expand = c(0,0)) +
-		theme(legend.title = element_blank(),
-			 axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
+          theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
 			 axis.text.y = element_text(size = 8))
 
 heat.net <- heatmap.df %>%
 	dplyr::select(fg, sc, qs.net) %>%
 	ggplot() +
 		geom_tile(aes(x = sc, y = fg, fill = qs.net)) +
-		scale_fill_viridis_c() +
+		scale_fill_viridis_c(name = expression(qs[net])) +
 		labs(title = "Net", x = "", y = "") +
 		scale_x_discrete(expand = c(0,0)) +
 		scale_y_discrete(expand = c(0,0)) +
-		theme(legend.title = element_blank(),
-			 axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
+		theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
 			 axis.text.y = element_text(size = 8))
 
 heat.spear <- heatmap.df %>%
 	dplyr::select(fg, sc, qs.spear) %>%
 	ggplot() +
 		geom_tile(aes(x = sc, y = fg, fill = qs.spear)) +
-		scale_fill_viridis_c() +
+		scale_fill_viridis_c(name = expression(qs[spear])) +
 		labs(title = "Spear", x = "", y = "") +
 		scale_x_discrete(expand = c(0,0)) +
 		scale_y_discrete(expand = c(0,0)) +
-		theme(legend.title = element_blank(),
-			 axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
+		theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
 			 axis.text.y = element_text(size = 8))
 
 ggarrange(heat.hook, heat.net, heat.spear, labels = c("A","B","C"), label.x = 0.06)
