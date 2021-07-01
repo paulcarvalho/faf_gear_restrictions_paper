@@ -81,10 +81,27 @@ run_bsmodel <- function(nbs, landings, uvc, effort.bs, gear.mgmt, nsc, nspecies,
   }
   
   # calculate summary stats
-  tmp3 <- tmp3 %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort) %>% dplyr::summarise(N.mu = mean(Ntot), N.sd = sd(Ntot), B.mu = mean(Btot), B.sd = sd(Btot), CN.mu = mean(CNtot), CN.sd = sd(CNtot), CB.mu = mean(CBtot), CB.sd = sd(CBtot)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se) %>% dplyr::select(effort, N.mu, N.up, N.lo, B.mu, B.up, B.lo, CN.mu, CN.up, CN.lo, CB.mu, CB.up, CB.lo)
-  tmp4 <- tmp4 %>% dplyr::mutate(effort = as.factor(effort)) %>% dplyr::group_by(effort, fg) %>% dplyr::summarise(N.mu = mean(N), N.sd = sd(N), B.mu = mean(B), B.sd = sd(B), CN.mu = mean(CN), CN.sd = sd(CN), CB.mu = mean(CB), CB.sd = sd(CB)) %>% dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% dplyr::mutate(N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se)
+  tmp5 <- tmp3 %>% 
+          dplyr::mutate(effort = as.factor(effort)) %>% 
+          dplyr::group_by(effort) %>% 
+          dplyr::summarise(N.mu = mean(Ntot), N.sd = sd(Ntot), N.iqr = IQR(Ntot), 
+                           B.mu = mean(Btot), B.sd = sd(Btot), B.iqr = IQR(Btot),
+                           CN.mu = mean(CNtot),CN.sd = sd(CNtot), CN.iqr = IQR(CNtot),
+                           CB.mu = mean(CBtot), CB.sd = sd(CBtot), CB.iqr = IQR(CBtot)) %>%
+          dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% 
+          dplyr::mutate(N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se) %>% 
+          dplyr::select(effort, N.mu, N.iqr, N.up, N.lo, B.mu, B.iqr, B.up, B.lo, CN.mu, CN.iqr, CN.up, CN.lo, CB.mu, CB.iqr, CB.up, CB.lo)
+  tmp6 <- tmp4 %>% 
+          dplyr::mutate(effort = as.factor(effort)) %>% 
+          dplyr::group_by(effort, fg) %>% 
+          dplyr::summarise(N.mu = mean(N), N.sd = sd(N), N.iqr = IQR(N),
+                           B.mu = mean(B), B.sd = sd(B), B.iqr = IQR(B),
+                           CN.mu = mean(CN), CN.sd = sd(CN), CN.iqr = IQR(CN),
+                           CB.mu = mean(CB), CB.sd = sd(CB), CB.iqr = IQR(CB)) %>% 
+          dplyr::mutate(N.se = N.sd / sqrt(nbs), B.se = B.sd / sqrt(nbs), CN.se = CN.sd / sqrt(nbs), CB.se = CB.sd / sqrt(nbs)) %>% 
+          dplyr::mutate(N.up = N.mu + qt(1 - (0.05 / 2), nbs - 1) * N.se, N.lo = N.mu - qt(1 - (0.05 / 2), nbs - 1) * N.se, B.up = B.mu + qt(1 - (0.05 / 2), nbs - 1) * B.se, B.lo = B.mu - qt(1 - (0.05 / 2), nbs - 1) * B.se, CN.up = CN.mu + qt(1 - (0.05 / 2), nbs - 1) * CN.se, CN.lo = CN.mu - qt(1 - (0.05 / 2), nbs - 1) * CN.se, CB.up = CB.mu + qt(1 - (0.05 / 2), nbs - 1) * CB.se, CB.lo = CB.mu - qt(1 - (0.05 / 2), nbs - 1) * CB.se)
   
-  return(list(tmp3, tmp4))
+  return(list(tmp5, tmp6, tmp3, tmp4))
 }
 
 calc_phi <- function(L.lower, L.upper, Linf, k, nsc){
