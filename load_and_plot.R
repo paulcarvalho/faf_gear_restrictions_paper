@@ -23,10 +23,13 @@ library(ggplot2)
 library(dplyr)
 library(ggpubr)
 library(pracma)
+library(openxlsx)
+library(DescTools)
 
 # --------------------------------------------------- LOAD MODEL DATA ---------------------------------------------------
 
 load("model_data.RData")
+
 
 # --------------------------------------------------- FIG 1: total biomass and catch ---------------------------------------------------
 
@@ -40,30 +43,26 @@ plot1.df  <- data.frame(scenario = rep(scenarios, each = length(effort)),
 				    biomass  = c(scen.1.out[[1]], scen.2.out[[1]], scen.3.out[[1]], scen.4.out[[1]], scen.5.out[[1]], scen.6.out[[1]], scen.7.out[[1]]),
 				    catch    = c(scen.1.out[[2]], scen.2.out[[2]], scen.3.out[[2]], scen.4.out[[2]], scen.5.out[[2]], scen.6.out[[2]], scen.7.out[[2]]))
 bs.index <- c(6, 10, 15)
-plot1.ci <- data.frame(scenario = rep(scenarios, each = 3),
+plot1.iqr <- data.frame(scenario = rep(scenarios, each = 3),
                        effort   = rep(effort.1.bs, length(scenarios)),
                        B.mu     = c(scen.1.out[[1]][bs.index], scen.2.out[[1]][bs.index], scen.3.out[[1]][bs.index], scen.4.out[[1]][bs.index], scen.5.out[[1]][bs.index], scen.6.out[[1]][bs.index], scen.7.out[[1]][bs.index]),
                        CB.mu    = c(scen.1.out[[2]][bs.index], scen.2.out[[2]][bs.index], scen.3.out[[2]][bs.index], scen.4.out[[2]][bs.index], scen.5.out[[2]][bs.index], scen.6.out[[2]][bs.index], scen.7.out[[2]][bs.index]),
-                       B.lo     = c(scen.1.bs[[1]]$B.lo - (scen.1.bs[[1]]$B.mu - scen.1.out[[1]][bs.index]), scen.2.bs[[1]]$B.lo - (scen.2.bs[[1]]$B.mu - scen.2.out[[1]][bs.index]), scen.3.bs[[1]]$B.lo - (scen.3.bs[[1]]$B.mu - scen.3.out[[1]][bs.index]), scen.4.bs[[1]]$B.lo - (scen.4.bs[[1]]$B.mu - scen.4.out[[1]][bs.index]), scen.5.bs[[1]]$B.lo - (scen.5.bs[[1]]$B.mu - scen.5.out[[1]][bs.index]), scen.6.bs[[1]]$B.lo - (scen.6.bs[[1]]$B.mu - scen.6.out[[1]][bs.index]), scen.7.bs[[1]]$B.lo - (scen.7.bs[[1]]$B.mu - scen.7.out[[1]][bs.index])),
-                       B.up     = c(scen.1.bs[[1]]$B.up - (scen.1.bs[[1]]$B.mu - scen.1.out[[1]][bs.index]), scen.2.bs[[1]]$B.up - (scen.2.bs[[1]]$B.mu - scen.2.out[[1]][bs.index]), scen.3.bs[[1]]$B.up - (scen.3.bs[[1]]$B.mu - scen.3.out[[1]][bs.index]), scen.4.bs[[1]]$B.up - (scen.4.bs[[1]]$B.mu - scen.4.out[[1]][bs.index]), scen.5.bs[[1]]$B.up - (scen.5.bs[[1]]$B.mu - scen.5.out[[1]][bs.index]), scen.6.bs[[1]]$B.up - (scen.6.bs[[1]]$B.mu - scen.6.out[[1]][bs.index]), scen.7.bs[[1]]$B.up - (scen.7.bs[[1]]$B.mu - scen.7.out[[1]][bs.index])),                       
-                       CB.lo    = c(scen.1.bs[[1]]$CB.lo - (scen.1.bs[[1]]$CB.mu - scen.1.out[[2]][bs.index]), scen.2.bs[[1]]$CB.lo - (scen.2.bs[[1]]$CB.mu - scen.2.out[[2]][bs.index]), scen.3.bs[[1]]$CB.lo - (scen.3.bs[[1]]$CB.mu - scen.3.out[[2]][bs.index]), scen.4.bs[[1]]$CB.lo - (scen.4.bs[[1]]$CB.mu - scen.4.out[[2]][bs.index]), scen.5.bs[[1]]$CB.lo - (scen.5.bs[[1]]$CB.mu - scen.5.out[[2]][bs.index]), scen.6.bs[[1]]$CB.lo - (scen.6.bs[[1]]$CB.mu - scen.6.out[[2]][bs.index]), scen.7.bs[[1]]$CB.lo - (scen.7.bs[[1]]$CB.mu - scen.7.out[[2]][bs.index])),
-                       CB.up    = c(scen.1.bs[[1]]$CB.up - (scen.1.bs[[1]]$CB.mu - scen.1.out[[2]][bs.index]), scen.2.bs[[1]]$CB.up - (scen.2.bs[[1]]$CB.mu - scen.2.out[[2]][bs.index]), scen.3.bs[[1]]$CB.up - (scen.3.bs[[1]]$CB.mu - scen.3.out[[2]][bs.index]), scen.4.bs[[1]]$CB.up - (scen.4.bs[[1]]$CB.mu - scen.4.out[[2]][bs.index]), scen.5.bs[[1]]$CB.up - (scen.5.bs[[1]]$CB.mu - scen.5.out[[2]][bs.index]), scen.6.bs[[1]]$CB.up - (scen.6.bs[[1]]$CB.mu - scen.6.out[[2]][bs.index]), scen.7.bs[[1]]$CB.up - (scen.7.bs[[1]]$CB.mu - scen.7.out[[2]][bs.index])))
-
+                       B.iqr    = c(scen.1.bs[[1]]$B.iqr, scen.2.bs[[1]]$B.iqr, scen.3.bs[[1]]$B.iqr, scen.4.bs[[1]]$B.iqr, scen.5.bs[[1]]$B.iqr, scen.6.bs[[1]]$B.iqr, scen.7.bs[[1]]$B.iqr),
+                       CB.iqr   = c(scen.1.bs[[1]]$CB.iqr, scen.2.bs[[1]]$CB.iqr, scen.3.bs[[1]]$CB.iqr, scen.4.bs[[1]]$CB.iqr, scen.5.bs[[1]]$CB.iqr, scen.6.bs[[1]]$CB.iqr, scen.7.bs[[1]]$CB.iqr))
+                       
 # Convert to relative values
 plot1.df <- plot1.df %>%
 	dplyr::mutate(effort.rel = effort/max(effort)) %>%    # relative effort
      dplyr::mutate(biomass.rel = biomass/max(biomass)) %>% # relative biomass
      dplyr::mutate(catch.rel = catch/max(catch)) %>%       # relative catch
      dplyr::mutate(sq.diff = (biomass.rel-0.5)^2)          # find squared difference between relative biomass and 0.5 to identify effort and catch at 0.5B0
-plot1.ci <- plot1.ci %>%
+plot1.iqr <- plot1.iqr %>%
      dplyr::mutate(effort.rel = effort/max(plot1.df$effort)) %>% # relative effort
      dplyr::mutate(B.mu = B.mu/max(plot1.df$biomass)) %>%
-     dplyr::mutate(B.lo = B.lo/max(plot1.df$biomass)) %>%
-     dplyr::mutate(B.up = B.up/max(plot1.df$biomass)) %>%
+     dplyr::mutate(B.iqr = B.iqr/max(plot1.df$biomass)) %>%
      dplyr::mutate(CB.mu = CB.mu/max(plot1.df$catch)) %>%
-     dplyr::mutate(CB.lo = CB.lo/max(plot1.df$catch)) %>%
-     dplyr::mutate(CB.up = CB.up/max(plot1.df$catch))
-
+     dplyr::mutate(CB.iqr = CB.iqr/max(plot1.df$catch))
+     
 # Find catch and effort at 0.5B0
 plot1Half.df <- plot1.df %>%
 	dplyr::group_by(scenario) %>%
@@ -74,9 +73,9 @@ plot1Half.df <- plot1.df %>%
 # Plot
 plot1.B <- ggplot() +
 	geom_line(data = plot1.df, aes(x = effort.rel, y = biomass.rel, color = scenario), lwd = 0.5) +
-	geom_hline(yintercept = 0.5, lty = "dashed", lwd = 1, alpha = 0.3) +
-     geom_point(aes(x = plot1.ci$effort.rel, y = plot1.ci$B.mu, color = plot1.ci$scenario), size = 0.75) +     
-     geom_errorbar(aes(x = plot1.ci$effort.rel, ymin = plot1.ci$B.lo, ymax = plot1.ci$B.up, color = plot1.ci$scenario), lwd = 0.5, width = 0.01) +
+	# geom_hline(yintercept = 0.5, lty = "dashed", lwd = 1, alpha = 0.3) +
+     geom_point(aes(x = plot1.iqr$effort.rel, y = plot1.iqr$B.mu, color = plot1.iqr$scenario), size = 0.75) +     
+     geom_errorbar(aes(x = plot1.iqr$effort.rel, ymin = plot1.iqr$B.mu - (plot1.iqr$B.iqr/2), ymax = plot1.iqr$B.mu + (plot1.iqr$B.iqr/2), color = plot1.iqr$scenario), lwd = 0.5, width = 0.01) +
 	scale_y_continuous(expand = c(0,0)) +
 	scale_x_continuous(expand = c(0,0)) +
 	scale_color_manual(values = cbp2) +
@@ -86,8 +85,8 @@ plot1.B <- ggplot() +
 
 plot1.C <- ggplot() +
 	geom_line(data = plot1.df, aes(x = effort.rel, y = catch.rel, color = scenario), lwd = 0.5) +
-     geom_point(aes(x = plot1.ci$effort.rel, y = plot1.ci$CB.mu, color = plot1.ci$scenario), size = 0.75) +
-     geom_errorbar(aes(x = plot1.ci$effort.rel, ymin = plot1.ci$CB.lo, ymax = plot1.ci$CB.up, color = plot1.ci$scenario), lwd = 0.5, width = 0.01) +
+     geom_point(aes(x = plot1.iqr$effort.rel, y = plot1.iqr$CB.mu, color = plot1.iqr$scenario), size = 0.75) +
+     geom_errorbar(aes(x = plot1.iqr$effort.rel, ymin = plot1.iqr$CB.mu - (plot1.iqr$CB.iqr/2), ymax = plot1.iqr$CB.mu + (plot1.iqr$CB.iqr/2), color = plot1.iqr$scenario), lwd = 0.5, width = 0.01) +
      scale_y_continuous(expand = c(0,0)) +
 	scale_x_continuous(expand = c(0,0)) +
 	scale_color_manual(values = cbp2) +
@@ -97,45 +96,58 @@ plot1.C <- ggplot() +
 	
 ggarrange(plot1.B, plot1.C, nrow=2, ncol=1, labels=c("A","B"))
 
+# --------------------------------------------------- ANOVA 1 - total biomass and catch ---------------------------------------------------
+
+# Create dataframe
+anova1.df <- NULL
+for(i in 1:length(scenarios)){
+     tmp.df <- get(paste('scen.', i, '.bs', sep = ''))[[3]] %>% dplyr::select('effort', 'Btot', 'CBtot') %>% dplyr::mutate(scenario = scenarios[i]) %>% dplyr::mutate(effort = as.factor(effort), scenario = as.factor(scenario)) 
+     anova1.df <- rbind(anova1.df, tmp.df)
+}
+anova1.Bres <- aov(Btot ~ effort * scenario, data = anova1.df)
+EtaSq(anova1.Bres, anova = TRUE)
+
+anova1.CBres <- aov(CBtot ~ effort * scenario, data = anova1.df)
+EtaSq(anova1.CBres, anova = TRUE)
 
 # --------------------------------------------------- FIG 2: mean length for stock and catch --------------------------------------------------
 
-# Note: Relative mean weight and length for biomass and catch were equivalent and, thus, we only included mean length.
-# Create dataframe for mean length (biomass and catch)
-plot2.df <- data.frame(scenario = rep(scenarios, each = length(effort)),
-				   effort = rep(effort, length(scenarios)),
-				   BmeanL = c(scen.1.out[[6]], scen.2.out[[6]], scen.3.out[[6]], scen.4.out[[6]], scen.5.out[[6]], scen.6.out[[6]], scen.7.out[[6]]),
-				   CmeanL = c(scen.1.out[[9]], scen.2.out[[9]], scen.3.out[[9]], scen.4.out[[9]], scen.5.out[[9]], scen.6.out[[9]], scen.7.out[[9]]))
-
-# Convert to relative values
-plot2.df <- plot2.df %>%
-	mutate(effort.rel = effort/max(effort)) %>%               # relative effort
-	mutate(BmeanL.rel = BmeanL/max(BmeanL)) %>%			   # relative mean length (biomass)
-	mutate(CmeanL.rel = CmeanL/max(CmeanL, na.rm = TRUE))     # relative mean length (catch)
-plot2.half <- plot1Half.df %>%
-	left_join(., plot2.df, by = c("effort.rel", "scenario"))
-
-# Plot
-plot2.BmeanL <- ggplot() +
-	geom_line(data = plot2.df, aes(x = effort.rel, y = BmeanL.rel, color = scenario), lwd = 1) +
-	geom_point(data = plot2.half, aes(x = effort.rel, y = BmeanL.rel, color = scenario), size = 2.5, alpha = 0.75) +
-	scale_y_continuous(expand = c(0,0)) +
-	scale_x_continuous(expand = c(0,0)) +
-	scale_color_manual(values = cbp2) +
-	labs(x = "", y = "Relative mean length (stock)") +
-	theme_classic() +
-	theme(legend.title = element_blank(), legend.position = c(0.85,0.8), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
-plot2.CmeanL <- ggplot() +
-	geom_line(data = plot2.df, aes(x = effort.rel, y = CmeanL.rel, color = scenario), lwd = 1) +
-	geom_point(data = plot2.half, aes(x = effort.rel, y = CmeanL.rel, color = scenario), size = 2.5, alpha = 0.75) +
-	scale_y_continuous(expand = c(0,0)) +
-	scale_x_continuous(expand = c(0,0)) +
-	scale_color_manual(values = cbp2) +
-	labs(x = "Effort", y = "Relative mean length (catch)") +
-	theme_classic() +
-	theme(legend.title = element_blank(), legend.position = "none", plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
-
-ggarrange(plot2.BmeanL, plot2.CmeanL, nrow=2, ncol=1, labels=c("A","B"))
+# # Note: Relative mean weight and length for biomass and catch were equivalent and, thus, we only included mean length.
+# # Create dataframe for mean length (biomass and catch)
+# plot2.df <- data.frame(scenario = rep(scenarios, each = length(effort)),
+# 				   effort = rep(effort, length(scenarios)),
+# 				   BmeanL = c(scen.1.out[[6]], scen.2.out[[6]], scen.3.out[[6]], scen.4.out[[6]], scen.5.out[[6]], scen.6.out[[6]], scen.7.out[[6]]),
+# 				   CmeanL = c(scen.1.out[[9]], scen.2.out[[9]], scen.3.out[[9]], scen.4.out[[9]], scen.5.out[[9]], scen.6.out[[9]], scen.7.out[[9]]))
+# 
+# # Convert to relative values
+# plot2.df <- plot2.df %>%
+# 	mutate(effort.rel = effort/max(effort)) %>%               # relative effort
+# 	mutate(BmeanL.rel = BmeanL/max(BmeanL)) %>%			   # relative mean length (biomass)
+# 	mutate(CmeanL.rel = CmeanL/max(CmeanL, na.rm = TRUE))     # relative mean length (catch)
+# plot2.half <- plot1Half.df %>%
+# 	left_join(., plot2.df, by = c("effort.rel", "scenario"))
+# 
+# # Plot
+# plot2.BmeanL <- ggplot() +
+# 	geom_line(data = plot2.df, aes(x = effort.rel, y = BmeanL.rel, color = scenario), lwd = 1) +
+# 	geom_point(data = plot2.half, aes(x = effort.rel, y = BmeanL.rel, color = scenario), size = 2.5, alpha = 0.75) +
+# 	scale_y_continuous(expand = c(0,0)) +
+# 	scale_x_continuous(expand = c(0,0)) +
+# 	scale_color_manual(values = cbp2) +
+# 	labs(x = "", y = "Relative mean length (stock)") +
+# 	theme_classic() +
+# 	theme(legend.title = element_blank(), legend.position = c(0.85,0.8), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
+# plot2.CmeanL <- ggplot() +
+# 	geom_line(data = plot2.df, aes(x = effort.rel, y = CmeanL.rel, color = scenario), lwd = 1) +
+# 	geom_point(data = plot2.half, aes(x = effort.rel, y = CmeanL.rel, color = scenario), size = 2.5, alpha = 0.75) +
+# 	scale_y_continuous(expand = c(0,0)) +
+# 	scale_x_continuous(expand = c(0,0)) +
+# 	scale_color_manual(values = cbp2) +
+# 	labs(x = "Effort", y = "Relative mean length (catch)") +
+# 	theme_classic() +
+# 	theme(legend.title = element_blank(), legend.position = "none", plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
+# 
+# ggarrange(plot2.BmeanL, plot2.CmeanL, nrow=2, ncol=1, labels=c("A","B"))
 
 # --------------------------------------------------- FIG 3-4: functional group biomass and catch ---------------------------------------------------
 
@@ -146,20 +158,14 @@ plot3.df <- data.frame(scenario = rep(scenarios, each = (length(fg) * length(eff
 				   effort = rep(effort, times = (length(fg) * length(scenarios))),
 				   biomass = c(as.vector(t(scen.1.out[[3]])), as.vector(t(scen.2.out[[3]])), as.vector(t(scen.3.out[[3]])), as.vector(t(scen.4.out[[3]])), as.vector(t(scen.5.out[[3]])), as.vector(t(scen.6.out[[3]])), as.vector(t(scen.7.out[[3]]))),
 				   catch = c(as.vector(t(scen.1.out[[4]])), as.vector(t(scen.2.out[[4]])), as.vector(t(scen.3.out[[4]])), as.vector(t(scen.4.out[[4]])), as.vector(t(scen.5.out[[4]])), as.vector(t(scen.6.out[[4]])), as.vector(t(scen.7.out[[4]]))))
-plot3.ci <- data.frame(scenario = rep(scenarios, each = (length(fg) * length(bs.index))),
+plot3.iqr <- data.frame(scenario = rep(scenarios, each = (length(fg) * length(bs.index))),
                        fg = rep(fg, each = length(bs.index), times = length(scenarios)),
                        effort = rep(effort[bs.index], times = (length(fg) * length(scenarios))),
                        biomass = c(as.vector(t(scen.1.out[[3]][,bs.index])), as.vector(t(scen.2.out[[3]][,bs.index])), as.vector(t(scen.3.out[[3]][,bs.index])), as.vector(t(scen.4.out[[3]][,bs.index])), as.vector(t(scen.5.out[[3]][,bs.index])), as.vector(t(scen.6.out[[3]][,bs.index])), as.vector(t(scen.7.out[[3]][,bs.index]))),
                        catch = c(as.vector(t(scen.1.out[[4]][,bs.index])), as.vector(t(scen.2.out[[4]][,bs.index])), as.vector(t(scen.3.out[[4]][,bs.index])), as.vector(t(scen.4.out[[4]][,bs.index])), as.vector(t(scen.5.out[[4]][,bs.index])), as.vector(t(scen.6.out[[4]][,bs.index])), as.vector(t(scen.7.out[[4]][,bs.index]))),
-                       B.up = c(scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$B.up - (scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$B.mu - as.vector(t(scen.1.out[[3]][,bs.index]))), scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$B.up - (scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$B.mu - as.vector(t(scen.2.out[[3]][,bs.index]))), scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$B.up - (scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$B.mu - as.vector(t(scen.3.out[[3]][,bs.index]))), scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$B.up - (scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$B.mu - as.vector(t(scen.4.out[[3]][,bs.index]))), scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$B.up - (scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$B.mu - as.vector(t(scen.5.out[[3]][,bs.index]))), scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$B.up - (scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$B.mu - as.vector(t(scen.6.out[[3]][,bs.index]))), scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$B.up - (scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$B.mu - as.vector(t(scen.7.out[[3]][,bs.index])))),
-                       B.lo = c(scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$B.lo - (scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$B.mu - as.vector(t(scen.1.out[[3]][,bs.index]))), scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$B.lo - (scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$B.mu - as.vector(t(scen.2.out[[3]][,bs.index]))), scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$B.lo - (scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$B.mu - as.vector(t(scen.3.out[[3]][,bs.index]))), scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$B.lo - (scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$B.mu - as.vector(t(scen.4.out[[3]][,bs.index]))), scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$B.lo - (scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$B.mu - as.vector(t(scen.5.out[[3]][,bs.index]))), scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$B.lo - (scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$B.mu - as.vector(t(scen.6.out[[3]][,bs.index]))), scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$B.lo - (scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$B.mu - as.vector(t(scen.7.out[[3]][,bs.index])))),
-                       CB.up = c(scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$CB.up - (scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.1.out[[4]][,bs.index]))), scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$CB.up - (scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.2.out[[4]][,bs.index]))), scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$CB.up - (scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.3.out[[4]][,bs.index]))), scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$CB.up - (scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.4.out[[4]][,bs.index]))), scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$CB.up - (scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.5.out[[4]][,bs.index]))), scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$CB.up - (scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.6.out[[4]][,bs.index]))), scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$CB.up - (scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.7.out[[4]][,bs.index])))),
-                       CB.lo = c(scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$CB.lo - (scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.1.out[[4]][,bs.index]))), scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$CB.lo - (scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.2.out[[4]][,bs.index]))), scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$CB.lo - (scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.3.out[[4]][,bs.index]))), scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$CB.lo - (scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.4.out[[4]][,bs.index]))), scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$CB.lo - (scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.5.out[[4]][,bs.index]))), scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$CB.lo - (scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.6.out[[4]][,bs.index]))), scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$CB.lo - (scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$CB.mu - as.vector(t(scen.7.out[[4]][,bs.index])))))
-
-# force negative confidence intervals to 0
-plot3.ci$B.lo[which(plot3.ci$B.lo < 0)]   <- 0
-plot3.ci$CB.lo[which(plot3.ci$CB.lo < 0)] <- 0
-
+                       B.iqr = c(scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$B.iqr, scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$B.iqr, scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$B.iqr, scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$B.iqr, scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$B.iqr, scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$B.iqr, scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$B.iqr),
+                       CB.iqr = c(scen.1.bs[[2]][order(scen.1.bs[[2]]$fg),]$CB.iqr, scen.2.bs[[2]][order(scen.2.bs[[2]]$fg),]$CB.iqr, scen.3.bs[[2]][order(scen.3.bs[[2]]$fg),]$CB.iqr, scen.4.bs[[2]][order(scen.4.bs[[2]]$fg),]$CB.iqr, scen.5.bs[[2]][order(scen.5.bs[[2]]$fg),]$CB.iqr, scen.6.bs[[2]][order(scen.6.bs[[2]]$fg),]$CB.iqr, scen.7.bs[[2]][order(scen.7.bs[[2]]$fg),]$CB.iqr))
+                       
 # Iterate through functional groups to construct plots
 plot3.B <- vector(mode="list", length=length(fg)) # empty list to store ggplots
 plot4.C <- vector(mode="list", length=length(fg)) # empty list to store ggplots
@@ -175,24 +181,28 @@ for(i in 1:length(fg)){
    	mutate(catch.rel = catch/max(catch))           # relative catch
    
    # Create dataframe for confidence intervals
-   fg.ci <- plot3.ci %>%
+   fg.iqr <- plot3.iqr %>%
      filter(fg == fg.i) %>%
      mutate(effort.rel = effort/max(fg.df$effort)) %>%
      mutate(biomass.rel = biomass/max(fg.df$biomass)) %>%
      mutate(catch.rel = catch/max(fg.df$catch)) %>%
-     mutate(B.up = B.up/max(fg.df$biomass)) %>%
-     mutate(B.lo = B.lo/max(fg.df$biomass)) %>%
-     mutate(CB.up = CB.up/max(fg.df$catch)) %>%
-     mutate(CB.lo = CB.lo/max(fg.df$catch))
+     mutate(B.iqr.lo = (biomass - (B.iqr/2))/max(fg.df$biomass)) %>%
+     mutate(B.iqr.hi = (biomass + (B.iqr/2))/max(fg.df$biomass)) %>%
+     mutate(CB.iqr.lo = (catch - (CB.iqr/2))/max(fg.df$catch)) %>%
+     mutate(CB.iqr.hi = (catch + (CB.iqr/2))/max(fg.df$catch))
+     
+   # force lower limits to zero
+   fg.iqr$B.iqr.lo[which(fg.iqr$B.iqr.lo < 0)] <- 0
+   fg.iqr$CB.iqr.lo[which(fg.iqr$CB.iqr.lo < 0)] <- 0
    
-   tmp.df <- plot1Half.df %>% 
+   tmp.df <- plot1Half.df %>%
    	left_join(., fg.df, by = c("effort.rel","scenario")) # get biomass and catch of fg.1 when total biomass = 0.5B0
    
    # create biomass plot for fg.i and all scenarios
    fg.plotB <- ggplot() +
    	geom_line(data = fg.df, aes(x = effort.rel, y = biomass.rel, color = scenario), lwd = 0.35) +
-     geom_point(data = fg.ci, aes(x = effort.rel, y = biomass.rel, color = scenario), size = 0.25) +
-     geom_errorbar(data = fg.ci, aes(x = effort.rel, ymin = B.lo, ymax = B.up, color = scenario), lwd = 0.35, width = 0.02) +
+     geom_point(data = fg.iqr, aes(x = effort.rel, y = biomass.rel, color = scenario), size = 0.25) +
+     geom_errorbar(data = fg.iqr, aes(x = effort.rel, ymin = B.iqr.lo, ymax = B.iqr.hi, color = scenario), lwd = 0.35, width = 0.02, alpha = 0.5) +
    	scale_y_continuous(expand = c(0,0), limits = c(0, 1.02)) +
 	scale_x_continuous(expand = c(0,0)) +
 	scale_color_manual(values = cbp2) +
@@ -203,11 +213,13 @@ for(i in 1:length(fg)){
    plot3.B[[i]] <- fg.plotB
    
    # create catch plot for fg.i and all scenarios
+   if(max(fg.iqr$CB.iqr.hi) > 1) iqr.lim <- max(fg.iqr$CB.iqr.hi) else iqr.lim <- 1
+   
    fg.plotC <- ggplot() +
    	geom_line(data = fg.df, aes(x = effort.rel, y = catch.rel, color = scenario), lwd = 0.35) +
-     geom_point(data = fg.ci, aes(x = effort.rel, y = catch.rel, color = scenario), size = 0.25) +
-     geom_errorbar(data = fg.ci, aes(x = effort.rel, ymin = CB.lo, ymax = CB.up, color = scenario), lwd = 0.35, width = 0.02) +
-   	scale_y_continuous(expand = c(0,0), limits = c(0,1.02)) +
+     geom_point(data = fg.iqr, aes(x = effort.rel, y = catch.rel, color = scenario), size = 0.25) +
+     geom_errorbar(data = fg.iqr, aes(x = effort.rel, ymin = CB.iqr.lo, ymax = CB.iqr.hi, color = scenario), lwd = 0.35, width = 0.02) +
+   	scale_y_continuous(expand = c(0,0), limits = c(0, iqr.lim)) +
 	scale_x_continuous(expand = c(0,0)) +
 	scale_color_manual(values = cbp2) +
    	labs(x = "", y = "", title = fg.i) +
@@ -234,6 +246,132 @@ plot4 <- ggarrange(plot4.C[[1]],plot4.C[[2]],plot4.C[[3]],plot4.C[[4]],plot4.C[[
 annotate_figure(plot4,
 			 bottom = text_grob("Effort", vjust=-6),
 			 left = text_grob(expression(paste("Catch (relative to ", C[italic(" max")], ")")), rot = 90, vjust = 1.5, hjust = 0.15))
+
+# --------------------------------------------------- NEW PROPORTIONAL LOSS FIGURE ---------------------------------------------------
+cbp3 <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255")
+
+tmp.line.plot <- plot3.df %>% 
+                 dplyr::filter(scenario == 'Hook-and-line') %>%
+                 dplyr::group_by(effort) %>%
+                 dplyr::mutate(B.prop = biomass / sum(biomass)) %>%
+                 dplyr::mutate(C.prop = catch / sum(catch)) %>%
+                 dplyr::mutate(B.cumsum = cumsum(B.prop))
+tmp.line.plot$fg <- factor(tmp.line.plot$fg, levels = c("Planktivores", "Piscivores", "Pisci-invertivores", "Micro-invertivores", "Macro-invertivores", "Grazers", "Excavators/scrapers", "Detritivores",  "Browsers") )
+prop.line.plot <- ggplot() +
+     geom_area(aes(x = tmp.line.plot$effort/max(tmp.line.plot$effort), y = tmp.line.plot$B.prop, fill = tmp.line.plot$fg)) +
+     scale_fill_manual(values = cbp3) +
+     scale_y_continuous(expand = c(0, 0)) +
+     scale_x_continuous(expand = c(0, 0)) +
+     labs(title = 'Hook-and-line', x = '', y = 'Proportion of total stock biomass') +
+     theme_classic()
+
+tmp.net.plot <- plot3.df %>% 
+     dplyr::filter(scenario == 'Net') %>%
+     dplyr::group_by(effort) %>%
+     dplyr::mutate(B.prop = biomass / sum(biomass)) %>%
+     dplyr::mutate(C.prop = catch / sum(catch)) %>%
+     dplyr::mutate(B.cumsum = cumsum(B.prop))
+tmp.net.plot$fg <- factor(tmp.net.plot$fg, levels = c("Planktivores", "Piscivores", "Pisci-invertivores", "Micro-invertivores", "Macro-invertivores", "Grazers", "Excavators/scrapers", "Detritivores",  "Browsers") )
+prop.net.plot <- ggplot() +
+     geom_area(aes(x = tmp.net.plot$effort/max(tmp.net.plot$effort), y = tmp.net.plot$B.prop, fill = tmp.net.plot$fg)) +
+     scale_fill_manual(values = cbp3) +
+     scale_y_continuous(expand = c(0, 0)) +
+     scale_x_continuous(expand = c(0, 0)) +
+     labs(title = 'Net', x = 'Effort', y = '') +
+     theme_classic()
+
+tmp.spear.plot <- plot3.df %>% 
+     dplyr::filter(scenario == 'Spear') %>%
+     dplyr::group_by(effort) %>%
+     dplyr::mutate(B.prop = biomass / sum(biomass)) %>%
+     dplyr::mutate(C.prop = catch / sum(catch)) %>%
+     dplyr::mutate(B.cumsum = cumsum(B.prop))
+tmp.spear.plot$fg <- factor(tmp.spear.plot$fg, levels = c("Planktivores", "Piscivores", "Pisci-invertivores", "Micro-invertivores", "Macro-invertivores", "Grazers", "Excavators/scrapers", "Detritivores",  "Browsers") )
+prop.spear.plot <- ggplot() +
+     geom_area(aes(x = tmp.spear.plot$effort/max(tmp.spear.plot$effort), y = tmp.spear.plot$B.prop, fill = tmp.spear.plot$fg)) +
+     scale_fill_manual(values = cbp3) +
+     scale_y_continuous(expand = c(0, 0)) +
+     scale_x_continuous(expand = c(0, 0)) +
+     labs(title = 'Spear', x = 'Effort', y = 'Proportion of total stock biomass') +
+     theme_classic() +
+     theme(legend.position = 'right', legend.title = element_blank())
+
+leg <- get_legend(prop.spear.plot)
+prop.line.plot <- prop.line.plot + theme(legend.position = 'none', plot.margin=unit(c(0.1, 0.3, 0, 0.2),"cm"))
+prop.net.plot <- prop.net.plot + theme(legend.position = 'none', plot.margin=unit(c(0.1, 0.3, 0, 0.2),"cm"))
+prop.spear.plot <- prop.spear.plot + theme(legend.position = 'none', plot.margin=unit(c(0.1, 0.3, 0, 0.2),"cm"))
+
+plot.prop <- ggarrange(prop.line.plot, prop.net.plot, prop.spear.plot, leg, nrow=2, ncol=2,
+                   labels=c("A","B","C"))
+
+tmp.net.plot %>% dplyr::filter(fg == 'Planktivores')
+
+cprop.line <- ggplot() +
+     geom_area(aes(x = tmp.line.plot$effort/max(tmp.line.plot$effort), y = tmp.line.plot$C.prop, fill = tmp.line.plot$fg)) +
+     scale_fill_manual(values = cbp3) +
+     scale_y_continuous(expand = c(0, 0)) +
+     scale_x_continuous(expand = c(0, 0)) +
+     labs(title = 'Hook-and-line', x = '', y = 'Proportion of total catch') +
+     theme_classic() +
+     theme(legend.position = 'none')
+cprop.net <- ggplot() +
+     geom_area(aes(x = tmp.net.plot$effort/max(tmp.net.plot$effort), y = tmp.net.plot$C.prop, fill = tmp.net.plot$fg)) +
+     scale_fill_manual(values = cbp3) +
+     scale_y_continuous(expand = c(0, 0)) +
+     scale_x_continuous(expand = c(0, 0)) +
+     labs(title = 'Net', x = '', y = 'Proportion of total catch') +
+     theme_classic() +
+     theme(legend.position = 'none')
+cprop.spear <- ggplot() +
+     geom_area(aes(x = tmp.spear.plot$effort/max(tmp.spear.plot$effort), y = tmp.spear.plot$C.prop, fill = tmp.spear.plot$fg)) +
+     scale_fill_manual(values = cbp3) +
+     scale_y_continuous(expand = c(0, 0)) +
+     scale_x_continuous(expand = c(0, 0)) +
+     labs(title = 'Spear', x = '', y = 'Proportion of total catch') +
+     theme_classic() + 
+     theme(legend.position = 'none')     
+plot.cprop <- ggarrange(cprop.line, cprop.net, cprop.spear, leg, nrow=2, ncol=2,
+                       labels=c("A","B","C"))
+
+
+
+# --------------------------------------------------- ANOVA 2 - functional group biomass and catch ---------------------------------------------------
+
+# Create dataframe for each functional group
+fg.eta.B  <- vector(mode = 'list', length = length(fg))
+fg.eta.CB <- vector(mode = 'list', length = length(fg))
+fg_eta <- createWorkbook() 
+
+for(j in 1:length(fg)){
+     tmp.aov.df <- NULL
+     for(i in 1:length(scenarios)){
+          tmp.df <- get(paste('scen.', i, '.bs', sep = ''))[[4]] %>% dplyr::filter(fg == fg[j]) %>% dplyr::select('effort', 'fg', 'B', 'CB') %>% dplyr::mutate(scenario = scenarios[i]) %>% dplyr::mutate(effort = as.factor(effort), scenario = as.factor(scenario))
+          tmp.aov.df <- rbind(tmp.aov.df, tmp.df)
+     }
+     tmp.aov.Bres <- aov(B ~ effort * scenario, data = tmp.aov.df)
+     tmp.eta.Bres <- EtaSq(tmp.aov.Bres, anova = TRUE)
+     
+     tmp.aov.CBres <- aov(CB ~ effort * scenario, data = tmp.aov.df)
+     tmp.eta.CBres <- EtaSq(tmp.aov.CBres, anova = TRUE)
+     
+     fg.eta.B[[j]]  <- tmp.eta.Bres
+     fg.eta.CB[[j]] <- tmp.eta.CBres
+     
+     names(fg.eta.B)[j]  <- fg[j]
+     names(fg.eta.CB)[j] <- fg[j]
+     
+     # estimated marginal means
+     # lm1.B <- lm(B ~ effort * scenario, data = tmp.aov.df)
+     # emm1 <- emmeans::emmeans(lm1.B, specs = "effort", by = "scenario")
+     # emm1.df <- as.data.frame(emm1)
+     # plot(emm1)
+     #
+     
+     addWorksheet(fg_eta, fg[j])
+     writeData(fg_eta, fg[j], cbind(tmp.eta.Bres, tmp.eta.CBres))
+}
+saveWorkbook(fg_eta, 'fg_eta.xlsx')
+
 
 # --------------------------------------------------- FIG SX: sensitivity of biomass and catch to removing functional groups ---------------------------------------------------
 
@@ -357,32 +495,44 @@ heat.hook <- heatmap.df %>%
 		labs(title = "Hook-and-line", x = "", y = "") +
 		scale_x_discrete(expand = c(0,0)) +
 		scale_y_discrete(expand = c(0,0)) +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
-			 axis.text.y = element_text(size = 8))
+          theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5),
+			 axis.text.y = element_text(size = 5),
+			 plot.title = element_text(size = 10),
+			 legend.title = element_text(size = 8),
+			 legend.key.width = unit(0.5, 'cm'),
+			 legend.key.height = unit(0.5, 'cm'))
 
 heat.net <- heatmap.df %>%
 	dplyr::select(fg, sc, qs.net) %>%
 	ggplot() +
 		geom_tile(aes(x = sc, y = fg, fill = qs.net)) +
 		scale_fill_viridis_c(name = expression(qs[net])) +
-		labs(title = "Net", x = "", y = "") +
+		labs(title = "Net", x = "Size class (cm)", y = "") +
 		scale_x_discrete(expand = c(0,0)) +
 		scale_y_discrete(expand = c(0,0)) +
-		theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
-			 axis.text.y = element_text(size = 8))
+		theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5),
+			 axis.text.y = element_text(size = 5),
+			 plot.title = element_text(size = 10),
+			 legend.title = element_text(size = 8),
+			 legend.key.width = unit(0.5, 'cm'),
+			 legend.key.height = unit(0.5, 'cm'))
 
 heat.spear <- heatmap.df %>%
 	dplyr::select(fg, sc, qs.spear) %>%
 	ggplot() +
 		geom_tile(aes(x = sc, y = fg, fill = qs.spear)) +
 		scale_fill_viridis_c(name = expression(qs[spear])) +
-		labs(title = "Spear", x = "", y = "") +
+		labs(title = "Spear", x = "Size class (cm)", y = "") +
 		scale_x_discrete(expand = c(0,0)) +
 		scale_y_discrete(expand = c(0,0)) +
-		theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 8),
-			 axis.text.y = element_text(size = 8))
+		theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5),
+			 axis.text.y = element_text(size = 5),
+			 plot.title = element_text(size = 10),
+			 legend.title = element_text(size = 8),
+			 legend.key.width = unit(0.5, 'cm'),
+			 legend.key.height = unit(0.5, 'cm'))
 
-ggarrange(heat.hook, heat.net, heat.spear, labels = c("A","B","C"), label.x = 0.06)
+ggarrange(heat.hook, heat.net, heat.spear, labels = c("A","B","C"), label.x = 0)
 
 
 # --------------------------------------------------- FIG SX: functional group mean length ---------------------------------------------------
