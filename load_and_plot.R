@@ -372,6 +372,44 @@ for(j in 1:length(fg)){
 }
 saveWorkbook(fg_eta, 'fg_eta.xlsx')
 
+fg_table <- createWorkbook() 
+for(i in 1:length(fg)){
+     fg.i <- fg[i] # Save name of functional group
+     
+     # Create dataframe for fg.i
+     fg.df <- plot3.df %>% 
+          filter(fg == fg.i) %>%                         # get data for fg.i
+          mutate(effort.rel = effort/max(effort)) %>%    # relative effort
+          mutate(biomass.rel = biomass/max(biomass)) %>% # relative biomass
+          mutate(catch.rel = catch/max(catch))           # relative catch
+     
+     # Create dataframe for IQR
+     fg.iqr <- plot3.iqr %>%
+          filter(fg == fg.i) %>%
+          mutate(effort.rel = effort/max(fg.df$effort)) %>%
+          mutate(biomass.rel = biomass/max(fg.df$biomass)) %>%
+          mutate(catch.rel = catch/max(fg.df$catch)) %>%
+          mutate(B.iqr.lo = (biomass - (B.iqr/2))/max(fg.df$biomass)) %>%
+          mutate(B.iqr.hi = (biomass + (B.iqr/2))/max(fg.df$biomass)) %>%
+          mutate(CB.iqr.lo = (catch - (CB.iqr/2))/max(fg.df$catch)) %>%
+          mutate(CB.iqr.hi = (catch + (CB.iqr/2))/max(fg.df$catch))
+     
+     # force lower limits to zero
+     fg.iqr$B.iqr.lo[which(fg.iqr$B.iqr.lo < 0)] <- 0
+     fg.iqr$CB.iqr.lo[which(fg.iqr$CB.iqr.lo < 0)] <- 0
+     fg.iqr$B.iqr <- paste0(round(fg.iqr$B.iqr.lo, 3), '-', round(fg.iqr$B.iqr.hi, 3))
+     fg.iqr$CB.iqr <- paste0(round(fg.iqr$CB.iqr.lo, 3), '-', round(fg.iqr$CB.iqr.hi, 3))
+     
+     # remove unwanted variables
+     fg.iqr <- fg.iqr %>% dplyr::select(scenario, effort, biomass.rel, B.iqr, catch.rel, CB.iqr) %>% dplyr::mutate(biomass.rel = round(biomass.rel, 3), catch.rel = round(catch.rel, 3))
+     fg.iqr <- reshape2::dcast(reshape2::melt(fg.iqr, id.vars = c('scenario', 'effort')), scenario ~ effort + variable)
+     fg.iqr$fg <- fg[i]
+     fg.iqr <- fg.iqr[, c(14, 1:13)]
+     
+     addWorksheet(fg_table, fg[i])
+     writeData(fg_table, fg[i], fg.iqr)
+}
+saveWorkbook(fg_table, 'irq_table.xlsx')
 
 # --------------------------------------------------- FIG SX: sensitivity of biomass and catch to removing functional groups ---------------------------------------------------
 
@@ -631,7 +669,7 @@ sa1 <- ggplot(data = totalB.df) +
   geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
   theme_classic() +
   geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
-  labs(x = "", y = "", title = "Total biomass") +
+  labs(x = "", y = "Percent change", title = "Total biomass") +
   scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 10))
@@ -648,49 +686,48 @@ sa2 <- ggplot(data = totalC.df) +
   geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
   theme_classic() +
   geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
-  labs(x = "", y = "", title = "Total catch") +
+  labs(x = "", y = "Percent change", title = "Total catch") +
   scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 10))
 
-# Mean stock length
-BmeanL.df <- data.frame(Parameters = c("alpha", "beta", "mu", "sigma", "gamma"),
-				    base = rep(base.sa$BmeanL, 5),
-				    hi = c(alphaHi.sa$BmeanL, betaHi.sa$BmeanL, muHi.sa$BmeanL, sigmaHi.sa$BmeanL, GeHi.sa$BmeanL),
-				    lo = c(alphaLo.sa$BmeanL, betaLo.sa$BmeanL, muLo.sa$BmeanL, sigmaLo.sa$BmeanL, GeLo.sa$BmeanL))
-BmeanL.df$hi_change <- ((BmeanL.df$hi - BmeanL.df$base) / BmeanL.df$base) * 100
-BmeanL.df$lo_change <- ((BmeanL.df$lo - BmeanL.df$base) / BmeanL.df$base) * 100
+# # Mean stock length
+# BmeanL.df <- data.frame(Parameters = c("alpha", "beta", "mu", "sigma", "gamma"),
+# 				    base = rep(base.sa$BmeanL, 5),
+# 				    hi = c(alphaHi.sa$BmeanL, betaHi.sa$BmeanL, muHi.sa$BmeanL, sigmaHi.sa$BmeanL, GeHi.sa$BmeanL),
+# 				    lo = c(alphaLo.sa$BmeanL, betaLo.sa$BmeanL, muLo.sa$BmeanL, sigmaLo.sa$BmeanL, GeLo.sa$BmeanL))
+# BmeanL.df$hi_change <- ((BmeanL.df$hi - BmeanL.df$base) / BmeanL.df$base) * 100
+# BmeanL.df$lo_change <- ((BmeanL.df$lo - BmeanL.df$base) / BmeanL.df$base) * 100
+# 
+# sa3 <- ggplot(data = BmeanL.df) +
+#   geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
+#   theme_classic() +
+#   geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
+#   labs(x = "", y = "", title = "Mean length (stock)") +
+#   scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
+#   theme(axis.text = element_text(size = 10),
+#         axis.title = element_text(size = 10))
+# 
+# # Mean catch length
+# CmeanL.df <- data.frame(Parameters = c("alpha", "beta", "mu", "sigma", "gamma"),
+# 				    base = rep(base.sa$CmeanL, 5),
+# 				    hi = c(alphaHi.sa$CmeanL, betaHi.sa$CmeanL, muHi.sa$CmeanL, sigmaHi.sa$CmeanL, GeHi.sa$CmeanL),
+# 				    lo = c(alphaLo.sa$CmeanL, betaLo.sa$CmeanL, muLo.sa$CmeanL, sigmaLo.sa$CmeanL, GeLo.sa$CmeanL))
+# CmeanL.df$hi_change <- ((CmeanL.df$hi - CmeanL.df$base) / CmeanL.df$base) * 100
+# CmeanL.df$lo_change <- ((CmeanL.df$lo - CmeanL.df$base) / CmeanL.df$base) * 100
+# 
+# sa4 <- ggplot(data = CmeanL.df) +
+#   geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
+#   theme_classic() +
+#   geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
+#   labs(x = "", y = "", title = "Mean length (catch)") +
+#   scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
+#   theme(axis.text = element_text(size = 10),
+#         axis.title = element_text(size = 10))
 
-sa3 <- ggplot(data = BmeanL.df) +
-  geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
-  theme_classic() +
-  geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
-  labs(x = "", y = "", title = "Mean length (stock)") +
-  scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 10))
-
-# Mean catch length
-CmeanL.df <- data.frame(Parameters = c("alpha", "beta", "mu", "sigma", "gamma"),
-				    base = rep(base.sa$CmeanL, 5),
-				    hi = c(alphaHi.sa$CmeanL, betaHi.sa$CmeanL, muHi.sa$CmeanL, sigmaHi.sa$CmeanL, GeHi.sa$CmeanL),
-				    lo = c(alphaLo.sa$CmeanL, betaLo.sa$CmeanL, muLo.sa$CmeanL, sigmaLo.sa$CmeanL, GeLo.sa$CmeanL))
-CmeanL.df$hi_change <- ((CmeanL.df$hi - CmeanL.df$base) / CmeanL.df$base) * 100
-CmeanL.df$lo_change <- ((CmeanL.df$lo - CmeanL.df$base) / CmeanL.df$base) * 100
-
-sa4 <- ggplot(data = CmeanL.df) +
-  geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
-  theme_classic() +
-  geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
-  labs(x = "", y = "", title = "Mean length (catch)") +
-  scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 10))
-
-sa.plot <- ggarrange(sa1, sa2, sa3, sa4, nrow = 2, ncol = 2, labels = c("A", "B", "C", "D"), label.x = 0.05)
+sa.plot <- ggarrange(sa1, sa2, nrow = 2, ncol = 1, labels = c("A", "B"))
 annotate_figure(sa.plot,
-			 bottom = text_grob("Parameters", vjust=0),
-			 left = text_grob("Percent change", rot = 90, vjust = 1.5, hjust = 0.15))
+			 bottom = text_grob("Parameters", vjust=0))
 
 
 ##### TEST RECRUITMENT CHANGES
