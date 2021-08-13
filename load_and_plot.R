@@ -73,7 +73,7 @@ plot1Half.df <- plot1.df %>%
 # Plot
 plot1.B <- ggplot() +
 	geom_line(data = plot1.df, aes(x = effort.rel, y = biomass.rel, color = scenario), lwd = 0.5) +
-	# geom_hline(yintercept = 0.5, lty = "dashed", lwd = 1, alpha = 0.3) +
+	geom_hline(yintercept = 0.5, lty = "dashed", lwd = 1, alpha = 0.3) +
      geom_point(aes(x = plot1.iqr$effort.rel, y = plot1.iqr$B.mu, color = plot1.iqr$scenario), size = 0.75) +     
      geom_errorbar(aes(x = plot1.iqr$effort.rel, ymin = plot1.iqr$B.mu - (plot1.iqr$B.iqr/2), ymax = plot1.iqr$B.mu + (plot1.iqr$B.iqr/2), color = plot1.iqr$scenario), lwd = 0.5, width = 0.01) +
 	scale_y_continuous(expand = c(0,0)) +
@@ -201,6 +201,7 @@ for(i in 1:length(fg)){
    # create biomass plot for fg.i and all scenarios
    fg.plotB <- ggplot() +
    	geom_line(data = fg.df, aes(x = effort.rel, y = biomass.rel, color = scenario), lwd = 0.35) +
+        # geom_point(data = fg.df, aes(x = effort.rel, y = biomass.rel, color = scenario)) +
      geom_point(data = fg.iqr, aes(x = effort.rel, y = biomass.rel, color = scenario), size = 0.25) +
      geom_errorbar(data = fg.iqr, aes(x = effort.rel, ymin = B.iqr.lo, ymax = B.iqr.hi, color = scenario), lwd = 0.35, width = 0.02, alpha = 0.5) +
    	scale_y_continuous(expand = c(0,0), limits = c(0, 1.02)) +
@@ -348,10 +349,10 @@ for(j in 1:length(fg)){
           tmp.df <- get(paste('scen.', i, '.bs', sep = ''))[[4]] %>% dplyr::filter(fg == fg[j]) %>% dplyr::select('effort', 'fg', 'B', 'CB') %>% dplyr::mutate(scenario = scenarios[i]) %>% dplyr::mutate(effort = as.factor(effort), scenario = as.factor(scenario))
           tmp.aov.df <- rbind(tmp.aov.df, tmp.df)
      }
-     tmp.aov.Bres <- aov(B ~ effort * scenario, data = tmp.aov.df)
+     tmp.aov.Bres <- aov(B ~ effort + scenario, data = tmp.aov.df)
      tmp.eta.Bres <- EtaSq(tmp.aov.Bres, anova = TRUE)
      
-     tmp.aov.CBres <- aov(CB ~ effort * scenario, data = tmp.aov.df)
+     tmp.aov.CBres <- aov(CB ~ effort + scenario, data = tmp.aov.df)
      tmp.eta.CBres <- EtaSq(tmp.aov.CBres, anova = TRUE)
      
      fg.eta.B[[j]]  <- tmp.eta.Bres
