@@ -1,2 +1,3 @@
-# reef_fisheries_model
-Code for gear-based fisheries management model on coral reefs.
+# Gear restrictions create conservation and fisheries tradeoffs for management
+
+This repository accompanies the paper - _Gear restrictions create conservation and fisheries tradeoffs for management_
