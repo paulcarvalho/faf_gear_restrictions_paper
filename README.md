@@ -10,4 +10,4 @@ Gear-based management for coral reef fisheries is often overlooked in the scient
 
 ### gear_reef_fisheries_model.R
 
-Data: This script reads .csv files provided in the ("data")[https://github.com/paulcarvalho/faf_gear_restrictions_paper/tree/main/data] folder
+Data: This script reads .csv files provided in the ["data"](https://github.com/paulcarvalho/faf_gear_restrictions_paper/tree/main/data) folder
