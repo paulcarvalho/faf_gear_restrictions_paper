@@ -553,51 +553,7 @@ sa2 <- ggplot(data = totalC.df) +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 10))
 
-# # Mean stock length
-# BmeanL.df <- data.frame(Parameters = c("alpha", "beta", "mu", "sigma", "gamma"),
-# 				    base = rep(base.sa$BmeanL, 5),
-# 				    hi = c(alphaHi.sa$BmeanL, betaHi.sa$BmeanL, muHi.sa$BmeanL, sigmaHi.sa$BmeanL, GeHi.sa$BmeanL),
-# 				    lo = c(alphaLo.sa$BmeanL, betaLo.sa$BmeanL, muLo.sa$BmeanL, sigmaLo.sa$BmeanL, GeLo.sa$BmeanL))
-# BmeanL.df$hi_change <- ((BmeanL.df$hi - BmeanL.df$base) / BmeanL.df$base) * 100
-# BmeanL.df$lo_change <- ((BmeanL.df$lo - BmeanL.df$base) / BmeanL.df$base) * 100
-# 
-# sa3 <- ggplot(data = BmeanL.df) +
-#   geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
-#   theme_classic() +
-#   geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
-#   labs(x = "", y = "", title = "Mean length (stock)") +
-#   scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
-#   theme(axis.text = element_text(size = 10),
-#         axis.title = element_text(size = 10))
-# 
-# # Mean catch length
-# CmeanL.df <- data.frame(Parameters = c("alpha", "beta", "mu", "sigma", "gamma"),
-# 				    base = rep(base.sa$CmeanL, 5),
-# 				    hi = c(alphaHi.sa$CmeanL, betaHi.sa$CmeanL, muHi.sa$CmeanL, sigmaHi.sa$CmeanL, GeHi.sa$CmeanL),
-# 				    lo = c(alphaLo.sa$CmeanL, betaLo.sa$CmeanL, muLo.sa$CmeanL, sigmaLo.sa$CmeanL, GeLo.sa$CmeanL))
-# CmeanL.df$hi_change <- ((CmeanL.df$hi - CmeanL.df$base) / CmeanL.df$base) * 100
-# CmeanL.df$lo_change <- ((CmeanL.df$lo - CmeanL.df$base) / CmeanL.df$base) * 100
-# 
-# sa4 <- ggplot(data = CmeanL.df) +
-#   geom_errorbar(aes(x = Parameters, ymin = lo_change, ymax = hi_change, width = 0.25), lwd = 1) +
-#   theme_classic() +
-#   geom_hline(yintercept = 0, color = "gray", alpha = 0.4) +
-#   labs(x = "", y = "", title = "Mean length (catch)") +
-#   scale_x_discrete(labels = c(expression(alpha),expression(beta),expression(gamma),expression(mu),expression(sigma))) +
-#   theme(axis.text = element_text(size = 10),
-#         axis.title = element_text(size = 10))
-
 sa.plot <- ggarrange(sa1, sa2, nrow = 2, ncol = 1, labels = c("A", "B"))
 annotate_figure(sa.plot,
 			 bottom = text_grob("Parameters", vjust=0))
 
-
-##### TEST RECRUITMENT CHANGES
-
-B <- seq(1,400)
-R <- B / (alpha[1] + beta[1] * B)
-plot(B, R, type = "l")
-R1 <- B / (alpha[1] + (beta[1]+beta[1]*0.1) * B)
-R2 <- B / (alpha[1] + (beta[1]-beta[1]*0.1) * B)
-lines(B, R1, lty = "dashed", col = "green")
-lines(B, R2, lty = "dotted", col = "red")
