@@ -10,7 +10,7 @@ Gear-based management for coral reef fisheries is often overlooked in the scient
 
 ### gear_reef_fisheries_model.R
 
-This file contains code to run a length-based, multi-species fisheries model for different fishing gear restriction scenarios, as well as sensitivity analyses for various parameters. Data from all model simulations are saved as a workspace _model_data.RData_ and the end of the script. The workspace file with model data was too large to upload to github, but data are available upon request.
+This file contains code to run a length-based, multi-species fisheries model for different fishing gear restriction scenarios, as well as sensitivity analyses for various parameters. Data from all model simulations are saved as a workspace _model_data.RData_ at the end of the script. The workspace file with model data was too large to upload to github, but data are available upon request.
 
 Data: This script reads .csv files provided in the ["data"](https://github.com/paulcarvalho/faf_gear_restrictions_paper/tree/main/data) folder
 
