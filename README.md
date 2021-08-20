@@ -13,6 +13,6 @@ Gear-based management for coral reef fisheries is often overlooked in the scient
 Data: This script reads .csv files provided in the ["data"](https://github.com/paulcarvalho/faf_gear_restrictions_paper/tree/main/data) folder
 
 Supporting files:  
-_model_functions.R_ contains functions that are called in _gear_reef_fisheries_model.R_. Documentation (e.g., description, usage, etc.) for functions can be viewed in R using the command docstring("function name"). Requires the [docstring package](https://cran.r-project.org/web/packages/docstring/vignettes/docstring_intro.html).
+_model_functions.R_ contains functions that are called in _gear_reef_fisheries_model.R_. Documentation (description, usage, etc.) for functions can be viewed in R using the command docstring("function name"). Requires the [docstring package](https://cran.r-project.org/web/packages/docstring/vignettes/docstring_intro.html).
 
-_run_model.R_
+_run_model.R_ runs population dynamics model with a single management scenario and a range of fishing effort. Returns summary information from simulations (e.g., abundance, biomass and catch).
