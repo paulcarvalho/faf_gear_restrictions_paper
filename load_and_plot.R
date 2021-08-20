@@ -88,21 +88,7 @@ plot1.C <- ggplot() +
 	
 ggarrange(plot1.B, plot1.C, nrow=2, ncol=1, labels=c("A","B"))
 
-# --------------------------------------------------- ANOVA 1 - total biomass and catch ---------------------------------------------------
-
-# Create dataframe
-anova1.df <- NULL
-for(i in 1:length(scenarios)){
-     tmp.df <- get(paste('scen.', i, '.bs', sep = ''))[[3]] %>% dplyr::select('effort', 'Btot', 'CBtot') %>% dplyr::mutate(scenario = scenarios[i]) %>% dplyr::mutate(effort = as.factor(effort), scenario = as.factor(scenario)) 
-     anova1.df <- rbind(anova1.df, tmp.df)
-}
-anova1.Bres <- aov(Btot ~ effort * scenario, data = anova1.df)
-EtaSq(anova1.Bres, anova = TRUE)
-
-anova1.CBres <- aov(CBtot ~ effort * scenario, data = anova1.df)
-EtaSq(anova1.CBres, anova = TRUE)
-
-# --------------------------------------------------- FIG 3-4: functional group biomass and catch ---------------------------------------------------
+# --------------------------------------------------- FIG 2-3: functional group biomass and catch ---------------------------------------------------
 
 # Create dataframe with functional group biomass and catch for all scenarios
 fg <- c("Browsers", "Detritivores", "Excavators/scrapers", "Grazers", "Macro-invertivores", "Micro-invertivores", "Pisci-invertivores", "Piscivores", "Planktivores") 
@@ -201,7 +187,7 @@ annotate_figure(plot4,
 			 bottom = text_grob("Effort", vjust=-6),
 			 left = text_grob(expression(paste("Catch (relative to ", C[italic(" max")], ")")), rot = 90, vjust = 1.5, hjust = 0.15))
 
-# --------------------------------------------------- NEW PROPORTIONAL LOSS FIGURE ---------------------------------------------------
+# --------------------------------------------------- FIG 6: proportional contribution of functional groups  ---------------------------------------------------
 cbp3 <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255")
 
 tmp.line.plot <- plot3.df %>% 
@@ -286,84 +272,6 @@ cprop.spear <- ggplot() +
      theme(legend.position = 'none')     
 plot.cprop <- ggarrange(cprop.line, cprop.net, cprop.spear, leg, nrow=2, ncol=2,
                        labels=c("A","B","C"))
-
-
-
-# --------------------------------------------------- ANOVA 2 - functional group biomass and catch ---------------------------------------------------
-
-# Create dataframe for each functional group
-fg.eta.B  <- vector(mode = 'list', length = length(fg))
-fg.eta.CB <- vector(mode = 'list', length = length(fg))
-fg_eta <- createWorkbook() 
-
-for(j in 1:length(fg)){
-     tmp.aov.df <- NULL
-     for(i in 1:length(scenarios)){
-          tmp.df <- get(paste('scen.', i, '.bs', sep = ''))[[4]] %>% dplyr::filter(fg == fg[j]) %>% dplyr::select('effort', 'fg', 'B', 'CB') %>% dplyr::mutate(scenario = scenarios[i]) %>% dplyr::mutate(effort = as.factor(effort), scenario = as.factor(scenario))
-          tmp.aov.df <- rbind(tmp.aov.df, tmp.df)
-     }
-     tmp.aov.Bres <- aov(B ~ effort + scenario, data = tmp.aov.df)
-     tmp.eta.Bres <- EtaSq(tmp.aov.Bres, anova = TRUE)
-     
-     tmp.aov.CBres <- aov(CB ~ effort + scenario, data = tmp.aov.df)
-     tmp.eta.CBres <- EtaSq(tmp.aov.CBres, anova = TRUE)
-     
-     fg.eta.B[[j]]  <- tmp.eta.Bres
-     fg.eta.CB[[j]] <- tmp.eta.CBres
-     
-     names(fg.eta.B)[j]  <- fg[j]
-     names(fg.eta.CB)[j] <- fg[j]
-     
-     # estimated marginal means
-     # lm1.B <- lm(B ~ effort * scenario, data = tmp.aov.df)
-     # emm1 <- emmeans::emmeans(lm1.B, specs = "effort", by = "scenario")
-     # emm1.df <- as.data.frame(emm1)
-     # plot(emm1)
-     #
-     
-     addWorksheet(fg_eta, fg[j])
-     writeData(fg_eta, fg[j], cbind(tmp.eta.Bres, tmp.eta.CBres))
-}
-saveWorkbook(fg_eta, 'fg_eta.xlsx')
-
-fg_table <- createWorkbook() 
-for(i in 1:length(fg)){
-     fg.i <- fg[i] # Save name of functional group
-     
-     # Create dataframe for fg.i
-     fg.df <- plot3.df %>% 
-          filter(fg == fg.i) %>%                         # get data for fg.i
-          mutate(effort.rel = effort/max(effort)) %>%    # relative effort
-          mutate(biomass.rel = biomass/max(biomass)) %>% # relative biomass
-          mutate(catch.rel = catch/max(catch))           # relative catch
-     
-     # Create dataframe for IQR
-     fg.iqr <- plot3.iqr %>%
-          filter(fg == fg.i) %>%
-          mutate(effort.rel = effort/max(fg.df$effort)) %>%
-          mutate(biomass.rel = biomass/max(fg.df$biomass)) %>%
-          mutate(catch.rel = catch/max(fg.df$catch)) %>%
-          mutate(B.iqr.lo = (biomass - (B.iqr/2))/max(fg.df$biomass)) %>%
-          mutate(B.iqr.hi = (biomass + (B.iqr/2))/max(fg.df$biomass)) %>%
-          mutate(CB.iqr.lo = (catch - (CB.iqr/2))/max(fg.df$catch)) %>%
-          mutate(CB.iqr.hi = (catch + (CB.iqr/2))/max(fg.df$catch))
-     
-     # force lower limits to zero
-     fg.iqr$B.iqr.lo[which(fg.iqr$B.iqr.lo < 0)] <- 0
-     fg.iqr$CB.iqr.lo[which(fg.iqr$CB.iqr.lo < 0)] <- 0
-     fg.iqr$B.iqr <- paste0(round(fg.iqr$B.iqr.lo, 3), '-', round(fg.iqr$B.iqr.hi, 3))
-     fg.iqr$CB.iqr <- paste0(round(fg.iqr$CB.iqr.lo, 3), '-', round(fg.iqr$CB.iqr.hi, 3))
-     
-     # remove unwanted variables
-     fg.iqr <- fg.iqr %>% dplyr::select(scenario, effort, biomass.rel, B.iqr, catch.rel, CB.iqr) %>% dplyr::mutate(biomass.rel = round(biomass.rel, 3), catch.rel = round(catch.rel, 3))
-     fg.iqr <- reshape2::dcast(reshape2::melt(fg.iqr, id.vars = c('scenario', 'effort')), scenario ~ effort + variable)
-     fg.iqr$fg <- fg[i]
-     fg.iqr <- fg.iqr[, c(14, 1:13)]
-     
-     addWorksheet(fg_table, fg[i])
-     writeData(fg_table, fg[i], fg.iqr)
-}
-saveWorkbook(fg_table, 'irq_table.xlsx')
 
 # --------------------------------------------------- FIG SX: sensitivity of biomass and catch to removing functional groups ---------------------------------------------------
 
