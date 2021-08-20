@@ -174,7 +174,6 @@ ggplot() +
      theme(legend.title = element_blank(), legend.position = c(0.9,0.65))
 
 # --------------------------------------------------- MODEL SETTINGS ---------------------------------------------------
-
 max.effort <- 40 # maximum effort for each gear type. Units are arbitrary
 effort     <- seq(0, 1, length.out = 20) * max.effort # fishing effort to test
 tmp.effort <- c(max.effort * 0.25, max.effort * 0.5, max.effort * 0.75)
@@ -240,83 +239,68 @@ scen.7.bs   <- run_bsmodel(nbs, landings, uvc, effort.7.bs, gear.mgmt.7, nsc, ns
 # fishing gears used simultaneously.
 
 # --------------------------------------------------- MODEL SENSITIVITY - NO FISHING ---------------------------------------------------
-
 base.effort <- effort
 base.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 base.sa <- calc_sensitivity_indices(N.ijte = base.model[[1]], B.ijte = base.model[[2]], cN.ijte = base.model[[3]], cB.ijte = base.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - alpha ---------------------------------------------------
-
 alpha.hi <- alpha + alpha*0.1
 alpha.lo <- alpha - alpha*0.1
 
 alphaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha.hi, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-alphaHi.sa <- calc_sensitivity_indices(N.ijte = alphaHi.model[[1]], B.ijte = alphaHi.model[[2]], cN.ijte = alphaHi.model[[3]], cB.ijte = alphaHi.model[[4]], L.mid, Lmat, tau, base.effort)
-
+alphaHi.sa    <- calc_sensitivity_indices(N.ijte = alphaHi.model[[1]], B.ijte = alphaHi.model[[2]], cN.ijte = alphaHi.model[[3]], cB.ijte = alphaHi.model[[4]], L.mid, Lmat, tau, base.effort)
 alphaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha.lo, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-alphaLo.sa <- calc_sensitivity_indices(N.ijte = alphaLo.model[[1]], B.ijte = alphaLo.model[[2]], cN.ijte = alphaLo.model[[3]], cB.ijte = alphaLo.model[[4]], L.mid, Lmat, tau, base.effort)
+alphaLo.sa    <- calc_sensitivity_indices(N.ijte = alphaLo.model[[1]], B.ijte = alphaLo.model[[2]], cN.ijte = alphaLo.model[[3]], cB.ijte = alphaLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - beta ---------------------------------------------------
-
 beta.hi <- beta + beta*0.1
 beta.lo <- beta - beta*0.1
 
 betaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta.hi, suit, ration, other, weight, sc_Linf, phi.min, N0)
-betaHi.sa <- calc_sensitivity_indices(N.ijte = betaHi.model[[1]], B.ijte = betaHi.model[[2]], cN.ijte = betaHi.model[[3]], cB.ijte = betaHi.model[[4]], L.mid, Lmat, tau, base.effort)
-
+betaHi.sa    <- calc_sensitivity_indices(N.ijte = betaHi.model[[1]], B.ijte = betaHi.model[[2]], cN.ijte = betaHi.model[[3]], cB.ijte = betaHi.model[[4]], L.mid, Lmat, tau, base.effort)
 betaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta.lo, suit, ration, other, weight, sc_Linf, phi.min, N0)
-betaLo.sa <- calc_sensitivity_indices(N.ijte = betaLo.model[[1]], B.ijte = betaLo.model[[2]], cN.ijte = betaLo.model[[3]], cB.ijte = betaLo.model[[4]], L.mid, Lmat, tau, base.effort)
+betaLo.sa    <- calc_sensitivity_indices(N.ijte = betaLo.model[[1]], B.ijte = betaLo.model[[2]], cN.ijte = betaLo.model[[3]], cB.ijte = betaLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - mu ---------------------------------------------------
-
 mu.hi <- mu + mu*0.1
 mu.lo <- mu - mu*0.1
 
 M2_prefs_muHi <- calc_prefs(L.mid, nsc, nspecies, mu.hi, sigma, weight, sc_Linf)
 M2_prefs_muLo <- calc_prefs(L.mid, nsc, nspecies, mu.lo, sigma, weight, sc_Linf)
-
-suit_muHi <- calc_suit(M2_prefs_muHi, tau, nsc, nspecies, sc_Linf)
-suit_muLo <- calc_suit(M2_prefs_muLo, tau, nsc, nspecies, sc_Linf)
+suit_muHi     <- calc_suit(M2_prefs_muHi, tau, nsc, nspecies, sc_Linf)
+suit_muLo     <- calc_suit(M2_prefs_muLo, tau, nsc, nspecies, sc_Linf)
 
 muHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_muHi, ration, other, weight, sc_Linf, phi.min, N0)
-muHi.sa <- calc_sensitivity_indices(N.ijte = muHi.model[[1]], B.ijte = muHi.model[[2]], cN.ijte = muHi.model[[3]], cB.ijte = muHi.model[[4]], L.mid, Lmat, tau, base.effort)
-
+muHi.sa    <- calc_sensitivity_indices(N.ijte = muHi.model[[1]], B.ijte = muHi.model[[2]], cN.ijte = muHi.model[[3]], cB.ijte = muHi.model[[4]], L.mid, Lmat, tau, base.effort)
 muLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_muLo, ration, other, weight, sc_Linf, phi.min, N0)
-muLo.sa <- calc_sensitivity_indices(N.ijte = muLo.model[[1]], B.ijte = muLo.model[[2]], cN.ijte = muLo.model[[3]], cB.ijte = muLo.model[[4]], L.mid, Lmat, tau, base.effort)
+muLo.sa    <- calc_sensitivity_indices(N.ijte = muLo.model[[1]], B.ijte = muLo.model[[2]], cN.ijte = muLo.model[[3]], cB.ijte = muLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - sigma ---------------------------------------------------
-
 sigma.hi <- sigma + sigma*0.1
 sigma.lo <- sigma - sigma*0.1
 
 M2_prefs_sigmaHi <- calc_prefs(L.mid, nsc, nspecies, mu, sigma.hi, weight, sc_Linf)
 M2_prefs_sigmaLo <- calc_prefs(L.mid, nsc, nspecies, mu, sigma.lo, weight, sc_Linf)
-
-suit_sigmaHi <- calc_suit(M2_prefs_sigmaHi, tau, nsc, nspecies, sc_Linf)
-suit_sigmaLo <- calc_suit(M2_prefs_sigmaLo, tau, nsc, nspecies, sc_Linf)
+suit_sigmaHi     <- calc_suit(M2_prefs_sigmaHi, tau, nsc, nspecies, sc_Linf)
+suit_sigmaLo     <- calc_suit(M2_prefs_sigmaLo, tau, nsc, nspecies, sc_Linf)
 
 sigmaHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_sigmaHi, ration, other, weight, sc_Linf, phi.min, N0)
-sigmaHi.sa <- calc_sensitivity_indices(N.ijte = sigmaHi.model[[1]], B.ijte = sigmaHi.model[[2]], cN.ijte = sigmaHi.model[[3]], cB.ijte = sigmaHi.model[[4]], L.mid, Lmat, tau, base.effort)
-
+sigmaHi.sa    <- calc_sensitivity_indices(N.ijte = sigmaHi.model[[1]], B.ijte = sigmaHi.model[[2]], cN.ijte = sigmaHi.model[[3]], cB.ijte = sigmaHi.model[[4]], L.mid, Lmat, tau, base.effort)
 sigmaLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit_sigmaLo, ration, other, weight, sc_Linf, phi.min, N0)
-sigmaLo.sa <- calc_sensitivity_indices(N.ijte = sigmaLo.model[[1]], B.ijte = sigmaLo.model[[2]], cN.ijte = sigmaLo.model[[3]], cB.ijte = sigmaLo.model[[4]], L.mid, Lmat, tau, base.effort)
+sigmaLo.sa    <- calc_sensitivity_indices(N.ijte = sigmaLo.model[[1]], B.ijte = sigmaLo.model[[2]], cN.ijte = sigmaLo.model[[3]], cB.ijte = sigmaLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - Ge ---------------------------------------------------
-
 ration_outGeHi <- calc_ration(k, Linf, nsc, nspecies, L.lower, L.upper, L.mid, W.a, W.b, phi.min, scale.Ge = 0.1)
-ration.GeHi <- ration_outGeHi[[1]]
-
+ration.GeHi    <- ration_outGeHi[[1]]
 ration_outGeLo <- calc_ration(k, Linf, nsc, nspecies, L.lower, L.upper, L.mid, W.a, W.b, phi.min, scale.Ge = -0.1)
-ration.GeLo <- ration_outGeLo[[1]]
+ration.GeLo    <- ration_outGeLo[[1]]
 
 GeHi.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration.GeHi, other, weight, sc_Linf, phi.min, N0)
-GeHi.sa <- calc_sensitivity_indices(N.ijte = GeHi.model[[1]], B.ijte = GeHi.model[[2]], cN.ijte = GeHi.model[[3]], cB.ijte = GeHi.model[[4]], L.mid, Lmat, tau, base.effort)
-
+GeHi.sa    <- calc_sensitivity_indices(N.ijte = GeHi.model[[1]], B.ijte = GeHi.model[[2]], cN.ijte = GeHi.model[[3]], cB.ijte = GeHi.model[[4]], L.mid, Lmat, tau, base.effort)
 GeLo.model <- run_model(base.effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration.GeLo, other, weight, sc_Linf, phi.min, N0)
-GeLo.sa <- calc_sensitivity_indices(N.ijte = GeLo.model[[1]], B.ijte = GeLo.model[[2]], cN.ijte = GeLo.model[[3]], cB.ijte = GeLo.model[[4]], L.mid, Lmat, tau, base.effort)
+GeLo.sa    <- calc_sensitivity_indices(N.ijte = GeLo.model[[1]], B.ijte = GeLo.model[[2]], cN.ijte = GeLo.model[[3]], cB.ijte = GeLo.model[[4]], L.mid, Lmat, tau, base.effort)
 
 # --------------------------------------------------- MODEL SENSITIVITY - gear specification ---------------------------------------------------
-
 # Increase mean of the lognormal function for size selectivity of hook-and-line and net fishing.
 # Simulating an increase in hook and mesh size.
 
@@ -332,20 +316,20 @@ netsize.2 <- netsize.i + 2 # 2 cm increase in mesh size
 
 # Selectivity for a 1 cm increase in hook and net mesh size
 mu.hook1 <- log((exp(size_sel$mu[1]) / hooksize.i) * hooksize.1)
-mu.net1 <- log((exp(size_sel$mu[2]) / netsize.i) * netsize.1)
+mu.net1  <- log((exp(size_sel$mu[2]) / netsize.i) * netsize.1)
 
 # Selectivity for a 2 cm increase in hook and net mesh size
 mu.hook2 <- log((exp(size_sel$mu[1]) / hooksize.i) * hooksize.2)
-mu.net2 <- log((exp(size_sel$mu[2]) / netsize.i) * netsize.2)
+mu.net2  <- log((exp(size_sel$mu[2]) / netsize.i) * netsize.2)
 
 # Calculate catchability and selectivity for 1 cm increase
-q1.sa <- array(NA, dim = c(nsc, nspecies, 3)) # create 3D array with size classes (rows), species (functional groups; cols), and gear types.
+q1.sa      <- array(NA, dim = c(nsc, nspecies, 3)) # create 3D array with size classes (rows), species (functional groups; cols), and gear types.
 q1.sa[,,1] <- calc_qs(L.mid, mu.hook1, size_sel$sd[1], fg_cat$q_line) # INCREASED hook size
 q1.sa[,,2] <- calc_qs(L.mid, mu.net1, size_sel$sd[2], fg_cat$q_net) # INCREASED net size
 q1.sa[,,3] <- calc_qs(L.mid, size_sel$mu[3], size_sel$sd[3], fg_cat$q_spear) # spear
 
 # Calculate catchability and selectivity for 2 cm increase
-q2.sa <- array(NA, dim = c(nsc, nspecies, 3)) # create 3D array with size classes (rows), species (functional groups; cols), and gear types.
+q2.sa      <- array(NA, dim = c(nsc, nspecies, 3)) # create 3D array with size classes (rows), species (functional groups; cols), and gear types.
 q2.sa[,,1] <- calc_qs(L.mid, mu.hook2, size_sel$sd[1], fg_cat$q_line) # INCREASED hook size
 q2.sa[,,2] <- calc_qs(L.mid, mu.net2, size_sel$sd[2], fg_cat$q_net) # INCREASED net size
 q2.sa[,,3] <- calc_qs(L.mid, size_sel$mu[3], size_sel$sd[3], fg_cat$q_spear) # spear
@@ -353,15 +337,14 @@ q2.sa[,,3] <- calc_qs(L.mid, size_sel$mu[3], size_sel$sd[3], fg_cat$q_spear) # s
 # MODEL WITH 1 CM INCREASE
 # gear.mgmt.1 <- c(1,1,1) # all gears used
 q1sa.model <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q1.sa, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-q1sa.out <- calc_summary_indices(N.ijte = q1sa.model[[1]], B.ijte = q1sa.model[[2]], cN.ijte = q1sa.model[[3]], cB.ijte = q1sa.model[[4]], t, L.mid, Lmat, nspecies)
+q1sa.out   <- calc_summary_indices(N.ijte = q1sa.model[[1]], B.ijte = q1sa.model[[2]], cN.ijte = q1sa.model[[3]], cB.ijte = q1sa.model[[4]], t, L.mid, Lmat, nspecies)
 
 # MODEL WITH 2 CM INCREASE
 # gear.mgmt.1 <- c(1,1,1) # all gears used
 q2sa.model <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q2.sa, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-q2sa.out <- calc_summary_indices(N.ijte = q2sa.model[[1]], B.ijte = q2sa.model[[2]], cN.ijte = q2sa.model[[3]], cB.ijte = q2sa.model[[4]], t, L.mid, Lmat, nspecies)
+q2sa.out   <- calc_summary_indices(N.ijte = q2sa.model[[1]], B.ijte = q2sa.model[[2]], cN.ijte = q2sa.model[[3]], cB.ijte = q2sa.model[[4]], t, L.mid, Lmat, nspecies)
 
 # --------------------------------------------------- SAVE DATA ---------------------------------------------------
-
 save.image(file = "model_data.RData")
 
 
