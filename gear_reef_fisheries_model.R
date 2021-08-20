@@ -185,7 +185,6 @@ nbs        <- 100 # number of times to run bootstrap
 gear.mgmt.1 <- c(1,1,1) # all gears used
 scen.1      <- run_model(effort, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.1.out  <- calc_summary_indices(N.ijte = scen.1[[1]], B.ijte = scen.1[[2]], cN.ijte = scen.1[[3]], cB.ijte = scen.1[[4]], t, L.mid, Lmat, nspecies)
-
 effort.1.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
 scen.1.bs   <- run_bsmodel(nbs, landings, uvc, effort.1.bs, gear.mgmt.1, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 
@@ -193,70 +192,43 @@ scen.1.bs   <- run_bsmodel(nbs, landings, uvc, effort.1.bs, gear.mgmt.1, nsc, ns
 gear.mgmt.2 <- c(0,1,1) # No hook-and-line fishing
 scen.2      <- run_model(effort, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.2.out  <- calc_summary_indices(N.ijte = scen.2[[1]], B.ijte = scen.2[[2]], cN.ijte = scen.2[[3]], cB.ijte = scen.2[[4]],  t, L.mid, Lmat, nspecies)
-
 effort.2.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
-# ptm<-proc.time()
 scen.2.bs   <- run_bsmodel(nbs, landings, uvc, effort.2.bs, gear.mgmt.2, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-# proc.time()-ptm
 
 # --------------------------------------------------- MODEL SCENARIO 3: NO NET FISHING ---------------------------------------------------
 gear.mgmt.3 <- c(1,0,1) # No net fishing
 scen.3      <- run_model(effort, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.3.out  <- calc_summary_indices(N.ijte = scen.3[[1]], B.ijte = scen.3[[2]], cN.ijte = scen.3[[3]], cB.ijte = scen.3[[4]], t, L.mid, Lmat, nspecies)
-
 effort.3.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
-# ptm<-proc.time()
 scen.3.bs   <- run_bsmodel(nbs, landings, uvc, effort.3.bs, gear.mgmt.3, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-# proc.time()-ptm
 
 # --------------------------------------------------- MODEL SCENARIO 4: NO SPEAR FISHING ---------------------------------------------------
 gear.mgmt.4 <- c(1,1,0) # No spear fishing
 scen.4      <- run_model(effort, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.4.out  <- calc_summary_indices(N.ijte = scen.4[[1]], B.ijte = scen.4[[2]], cN.ijte = scen.4[[3]], cB.ijte = scen.4[[4]], t, L.mid, Lmat, nspecies)
-
 effort.4.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
-#ptm<-proc.time()
 scen.4.bs   <- run_bsmodel(nbs, landings, uvc, effort.4.bs, gear.mgmt.4, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-#proc.time()-ptm
 
 # --------------------------------------------------- MODEL SCENARIO 5: LINE FISHING ---------------------------------------------------
 gear.mgmt.5 <- c(1,0,0) # Only hook-and-line fishing
 scen.5      <- run_model(effort, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.5.out  <- calc_summary_indices(N.ijte = scen.5[[1]], B.ijte = scen.5[[2]], cN.ijte = scen.5[[3]], cB.ijte = scen.5[[4]], t, L.mid, Lmat, nspecies)
-
 effort.5.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
-# ptm<-proc.time()
 scen.5.bs   <- run_bsmodel(nbs, landings, uvc, effort.5.bs, gear.mgmt.5, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-# proc.time()-ptm
 
 # --------------------------------------------------- MODEL SCENARIO 6: NET FISHING ---------------------------------------------------
 gear.mgmt.6 <- c(0,1,0) # Only net fishing
 scen.6      <- run_model(effort, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.6.out  <- calc_summary_indices(N.ijte = scen.6[[1]], B.ijte = scen.6[[2]], cN.ijte = scen.6[[3]], cB.ijte = scen.6[[4]],  t, L.mid, Lmat, nspecies)
-
 effort.6.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
-# ptm<-proc.time()
 scen.6.bs   <- run_bsmodel(nbs, landings, uvc, effort.6.bs, gear.mgmt.6, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-# proc.time()-ptm
 
 # --------------------------------------------------- MODEL SCENARIO 7: SPEAR FISHING ---------------------------------------------------
 gear.mgmt.7 <- c(0,0,1) # Only spear fishing
 scen.7      <- run_model(effort, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
 scen.7.out  <- calc_summary_indices(N.ijte = scen.7[[1]], B.ijte = scen.7[[2]], cN.ijte = scen.7[[3]], cB.ijte = scen.7[[4]], t, L.mid, Lmat, nspecies)
-
 effort.7.bs <- c(max.effort*0.25, max.effort*0.5, max.effort*0.75)
-# ptm<-proc.time()
 scen.7.bs   <- run_bsmodel(nbs, landings, uvc, effort.7.bs, gear.mgmt.7, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0)
-# proc.time()-ptm
-
-ggplot() +
-        geom_line(aes(x = effort/max.effort, y = scen.7.out[[1]])) +
-        geom_point(aes(x=effort.7.bs/max.effort, y=scen.7.bs[[1]]$B.mu)) +
-        geom_errorbar(aes(x=effort.7.bs/max.effort,
-                          ymin=scen.7.bs[[1]]$B.lo,
-                          ymax=scen.7.bs[[1]]$B.up), width = 0.05)
-
-
 
 # --------------------------------------------------- MODEL SENSITIVITY ANALYSES ---------------------------------------------------
 # First set of sensitivity analyses run simulations with key parameters (i.e., alpha, beta, mu, sigma, Ge, and tau) increased or
