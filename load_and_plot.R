@@ -1,21 +1,15 @@
 # ------------------------------------------------------------------------------------------------------------------
 ## File 'load_and_plot.R'
-## Gear-based fisheries population model
 ##
-## Authors: Paul Carvalho
-##          Austin Humphries
+## Publication: Carvalho, PG and Humphries AT. (2021). Gear restrictions create conservation and fisheries trade-offs for 
+##              management. Fish and Fisheries. DOI:https://doi.org/10.1111/faf.12607 
 ##
-## Description: Create manuscript plots. Coral reef fisheries model of nine functional groups to test biomass
-##              and catch response to various gear-based management scenarios. The model losely represents 
-##			 the Wakatobi coral reef fishery in Indonesia, where certain model parameters were derived.
+## Description: Create plots presented in the paper. Coral reef fisheries model of nine functional groups to test biomass
+##              and catch response to various gear-based management scenarios. The model losely represents the Wakatobi 
+##              coral reef fishery in Indonesia, where certain model parameters were derived.
 
 # Clean workspace
 rm(list = ls())
-
-# --------------------------------------------------- DIRECTORIES ---------------------------------------------------
-
-# setwd("C:/Users/pgcar/Google Drive/Paul Carvalho/dissertation/chapter 4/model") # PC
-# setwd("~/Google Drive/grad students/Paul Carvalho/dissertation/chapter 4/model")  # AH
 
 # --------------------------------------------------- LIBRARIES ---------------------------------------------------
 
