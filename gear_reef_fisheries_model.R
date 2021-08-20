@@ -36,10 +36,10 @@ library(foreach)
 library(doParallel)
 
 # Load data 
-landings  <- read.csv("landings.csv")                  # fisheries-dependent data
-uvc       <- read.csv("uvc.csv")                       # fisheries-independent data
-LH.params <- read_xlsx("model_params.xlsx", sheet = 1) # life history parameters
-foodweb   <- read_xlsx("model_params.xlsx", sheet = 2) # food web matrix
+landings  <- read.csv("landings.csv")  # fisheries-dependent data
+uvc       <- read.csv("uvc.csv")       # fisheries-independent data
+LH.params <- read.csv("LH_params.csv") # life history parameters
+foodweb   <- read.csv("foodweb.csv")   # food web matrix
 
 # --------------------------------------------------- MODEL PARAMETERS -----------------------------------------------------
 t        <- 200 # number of timesteps
@@ -128,14 +128,15 @@ r.i     <- c(169, 1525, 232, 284, 2211, 995, 35, 70, 6832) # initial estimate fo
 Ntest   <- matrix(1, nsc, nspecies)
 par.in  <- c(r.i, other.i) # optimize recruitment and food 'other' to achieve expected biomass of each functional group in the absence of fishing.
 
-# ptm<-proc.time()
-# r.fit <- optim(par=par.in, fn=cal_recruitment, N0=Ntest, t=t, nsc=nsc, nspecies=nspecies,
-#             	 M1=M1, phi=phi, L.lower=L.lower, L.upper=L.upper, W.a=W.a, W.b=W.b, Bi.F0=bio.exp,
-# 						   suit=suit, ration=ration, weight=weight, sc_Linf=sc_Linf, phi.min=phi.min,
+## IMPORTANT NOTE: uncomment the following block of code to run optimization function.
+# ptm<-proc.time() # start timer
+# r.fit <- optim(par=par.in, fn=cal_recruitment, N0=Ntest, t=t, nsc=nsc, nspecies=nspecies, M1=M1, phi=phi, L.lower=L.lower, L.upper=L.upper, W.a=W.a, W.b=W.b, Bi.F0=bio.exp, suit=suit, ration=ration, weight=weight, sc_Linf=sc_Linf, phi.min=phi.min,
 #             	 control = list(maxit = 8000))
-# proc.time()-ptm
-# r <- r.fit$par[1:9] # c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
-# other <- r.fit$par[10] # 55003764
+# proc.time()-ptm # end timer
+# r     <- r.fit$par[1:9] # c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
+# other <- r.fit$par[10]  # 55003764
+
+# Data saved from optimization function above
 r          <- c(169.92188, 1525.68866, 232.19953, 284.86446, 2211.87258, 995.01757, 35.14660, 70.13579, 6831.70676)
 other      <- 55003764
 alpha_beta <- r # asymptote of BH srr
@@ -171,20 +172,6 @@ ggplot() +
      scale_y_continuous(expand = c(0,0)) + scale_x_continuous(expand = c(0,0)) + 
      theme_classic() + 
      theme(legend.title = element_blank(), legend.position = c(0.9,0.65))
-
-# # get the abundance and biomass for each functional group in the absence of fishing
-# Ni.F0 <- colSums(N.ijt[,,1]) # abundance
-# N.it  <- as.data.frame(t(colSums(N.ijt)))
-# N.it  <- N.it %>% mutate(time = 1:t) %>% dplyr::select(time, "Browser"=V1,"Detritivore"=V2,"Excavator/scraper"=V3,"Grazer"=V4,"Macro-invertivore"=V5, "Micro-invertivore"=V6,"Pisci-invertivore"=V7,"Piscivore"=V8,"Planktivore"=V9) %>% gather(., "fg", "N", -time)
-# # calculate biomass
-# B.ijt <- calc_bio(N.ijt, t, L.lower, L.upper, W.a, W.b, nsc, nspecies)
-# Bi.F0 <- colSums(B.ijt[,,t]) # biomass
-# B.it  <- as.data.frame(t(colSums(B.ijt)))
-# B.it  <- B.it %>% mutate(time = 1:t) %>% dplyr::select(time, "Browser"=V1,"Detritivore"=V2,"Excavator/scraper"=V3,"Grazer"=V4,"Macro-invertivore"=V5, "Micro-invertivore"=V6,"Pisci-invertivore"=V7,"Piscivore"=V8,"Planktivore"=V9) %>% gather(., "fg", "B", -time)
-# # plot 
-# plot.equil1 <- ggplot() + geom_line(data = N.it, aes(x = time, y = log(N), color = fg), lwd = 1) + labs(y = "log(Abundance)") + scale_y_continuous(limits = c(min(log(N.it$N)),9), expand = c(0,0)) + theme_classic() + guides(color=guide_legend(ncol=3)) + theme(legend.title = element_blank(), legend.position = c(0.5,0.9))
-# plot.equil2 <- ggplot() + geom_line(data = B.it, aes(x = time, y = log(B), color = fg), lwd = 1) + labs(x = "Timesteps", y = "log(Biomass)") + theme_classic() + theme(legend.position = "none")
-# ggarrange(plot.equil1, plot.equil2, ncol = 1, nrow = 2, labels = c("A", "B"))
 
 # --------------------------------------------------- MODEL SETTINGS ---------------------------------------------------
 
