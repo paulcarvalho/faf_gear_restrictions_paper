@@ -12,7 +12,6 @@
 rm(list = ls())
 
 # --------------------------------------------------- LIBRARIES ---------------------------------------------------
-
 library(ggplot2)
 library(dplyr)
 library(ggpubr)
@@ -21,11 +20,10 @@ library(openxlsx)
 library(DescTools)
 
 # --------------------------------------------------- LOAD MODEL DATA ---------------------------------------------------
-
+# The workspace file is too large for uploading to github, but the file will be provided upon request until until we can find a way to compress the file and make it available in the repository.
 load("model_data.RData")
 
-
-# --------------------------------------------------- FIG 1: total biomass and catch ---------------------------------------------------
+# --------------------------------------------------- FIG 4: total biomass and catch ---------------------------------------------------
 
 # Colorblind friendly palette
 cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00")
@@ -103,45 +101,6 @@ EtaSq(anova1.Bres, anova = TRUE)
 
 anova1.CBres <- aov(CBtot ~ effort * scenario, data = anova1.df)
 EtaSq(anova1.CBres, anova = TRUE)
-
-# --------------------------------------------------- FIG 2: mean length for stock and catch --------------------------------------------------
-
-# # Note: Relative mean weight and length for biomass and catch were equivalent and, thus, we only included mean length.
-# # Create dataframe for mean length (biomass and catch)
-# plot2.df <- data.frame(scenario = rep(scenarios, each = length(effort)),
-# 				   effort = rep(effort, length(scenarios)),
-# 				   BmeanL = c(scen.1.out[[6]], scen.2.out[[6]], scen.3.out[[6]], scen.4.out[[6]], scen.5.out[[6]], scen.6.out[[6]], scen.7.out[[6]]),
-# 				   CmeanL = c(scen.1.out[[9]], scen.2.out[[9]], scen.3.out[[9]], scen.4.out[[9]], scen.5.out[[9]], scen.6.out[[9]], scen.7.out[[9]]))
-# 
-# # Convert to relative values
-# plot2.df <- plot2.df %>%
-# 	mutate(effort.rel = effort/max(effort)) %>%               # relative effort
-# 	mutate(BmeanL.rel = BmeanL/max(BmeanL)) %>%			   # relative mean length (biomass)
-# 	mutate(CmeanL.rel = CmeanL/max(CmeanL, na.rm = TRUE))     # relative mean length (catch)
-# plot2.half <- plot1Half.df %>%
-# 	left_join(., plot2.df, by = c("effort.rel", "scenario"))
-# 
-# # Plot
-# plot2.BmeanL <- ggplot() +
-# 	geom_line(data = plot2.df, aes(x = effort.rel, y = BmeanL.rel, color = scenario), lwd = 1) +
-# 	geom_point(data = plot2.half, aes(x = effort.rel, y = BmeanL.rel, color = scenario), size = 2.5, alpha = 0.75) +
-# 	scale_y_continuous(expand = c(0,0)) +
-# 	scale_x_continuous(expand = c(0,0)) +
-# 	scale_color_manual(values = cbp2) +
-# 	labs(x = "", y = "Relative mean length (stock)") +
-# 	theme_classic() +
-# 	theme(legend.title = element_blank(), legend.position = c(0.85,0.8), plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
-# plot2.CmeanL <- ggplot() +
-# 	geom_line(data = plot2.df, aes(x = effort.rel, y = CmeanL.rel, color = scenario), lwd = 1) +
-# 	geom_point(data = plot2.half, aes(x = effort.rel, y = CmeanL.rel, color = scenario), size = 2.5, alpha = 0.75) +
-# 	scale_y_continuous(expand = c(0,0)) +
-# 	scale_x_continuous(expand = c(0,0)) +
-# 	scale_color_manual(values = cbp2) +
-# 	labs(x = "Effort", y = "Relative mean length (catch)") +
-# 	theme_classic() +
-# 	theme(legend.title = element_blank(), legend.position = "none", plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
-# 
-# ggarrange(plot2.BmeanL, plot2.CmeanL, nrow=2, ncol=1, labels=c("A","B"))
 
 # --------------------------------------------------- FIG 3-4: functional group biomass and catch ---------------------------------------------------
 
