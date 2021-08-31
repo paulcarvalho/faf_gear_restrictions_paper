@@ -11,7 +11,7 @@
 rm(list = ls())
 
 # --------------------------------------------------- GENERAL NOTES --------------------------------------------------------
-# 1. Use docstring([insert function name]) to view function documentation and information.
+# 1. Use docstring("insert function name") to view function documentation and information.
 
 # --------------------------------------------------- LIBRARIES and DATA ---------------------------------------------------
 library(readxl)
