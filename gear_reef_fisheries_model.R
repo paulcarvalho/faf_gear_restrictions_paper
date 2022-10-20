@@ -98,26 +98,29 @@ suit <- calc_suit(M2_prefs, tau, nsc, nspecies, sc_Linf)
 M1 <- nat_mortality(L.lower, L.upper, nspecies, nsc, phi.min, Linf, k, "mid") # natural mortality (excluding predation)
 
 # bootstrap (resample) landings and uvc data to calculate base catchability*selectivity 
-n.bs    <- 100 # number of boostraps
+n.bs    <- 1000 # number of boostraps
 n.cores <- parallel::detectCores() - 1  # number of cores for parallel for loop
-cluster <- parallel::makeCluster(n.cores, type = "PSOCK"); registerDoParallel(cluster)
+cluster <- parallel::makeCluster(n.cores, type = "PSOCK"); registerDoParallel(cluster) # set up parallel computing backend
+# run parallel for loop for bootstrapping
 q.tmp   <- foreach(i = 1:n.bs, .combine = 'rbind') %dopar% {
                library(dplyr); library(data.table); library(splitstackshape); library(plotrix); library(fitdistrplus); library(tidyr)
                q.tmp <- bootstrap_qs(landings, uvc, resample = TRUE)
                q.tmp <- array(as.numeric(unlist(q.tmp)), dim = c(nsc, nspecies, 3))
 }
-parallel::stopCluster(cluster)
+parallel::stopCluster(cluster) # close parallel backend
+# Organize data from bootstrap routine
 q.tmp2 <- array(NA, dim = c(nsc, nspecies, 3, n.bs))
 for(i in 1:n.bs){
      tmp <- array(as.array(q.tmp)[i, ], dim = c(nsc, nspecies, 3))
      q.tmp2[, , , i] <- tmp 
 }
+# Save catchability*selectivity
 test.hook  <- apply(q.tmp2[, , 1, ], c(1, 2), mean); test.hook  <- test.hook/sum(test.hook)
 test.net   <- apply(q.tmp2[, , 2, ], c(1, 2), mean); test.net   <- test.net/sum(test.net)
 test.spear <- apply(q.tmp2[, , 3, ], c(1, 2), mean); test.spear <- test.spear/sum(test.spear)
 q <- array(c(test.hook, test.net, test.spear), dim = c(nsc, nspecies, 3)) 
 
-# run fisheries model
+# Load function that run the multispecies fisheries population dynamics model
 source("run_model.R")
 
 # --------------------------------------------------- CALIBRATE RECRUITMENT ---------------------------------------------------

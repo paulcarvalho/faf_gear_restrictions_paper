@@ -1,3 +1,11 @@
+## Publication: Carvalho, PG and Humphries AT. (2021). Gear restrictions create conservation and fisheries trade-offs for 
+##              management. Fish and Fisheries. DOI:https://doi.org/10.1111/faf.12607 
+##
+## Description: Multispecies population dynamics model that is used in 'gear_reef_fisheries_model.R' to run simulations of different
+##              gear-based management scenarios.
+## 
+## Note: Use docstring("insert function name") to view function documentation and information.
+
 run_model <- function(effort, gear.mgmt, nsc, nspecies, t, Lmat, M1, phi, L.lower, L.upper, W.a, W.b, q, alpha, beta, suit, ration, other, weight, sc_Linf, phi.min, N0){
      #' run_model
      #' 
