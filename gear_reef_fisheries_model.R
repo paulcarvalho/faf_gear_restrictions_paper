@@ -67,7 +67,7 @@ h <- Lmat/Linf # dimensionless steepness parameter for Beverton-Holt stock-recru
 
 # Food web matrix
 tau     <- as.matrix(foodweb[,c(2:10)]) # Foodweb matrix. Columns indicate predator species, rows indicate prey species, and 1 indicates prey consumed by predators
-other.i <- 5e7
+other.i <- 5e7 # bin for 'other' prey organisms not explicitly accounted for in the model
 
 # Parameters for predator size preference function
 mu    <- -3.5 # mean for lognormal function
