@@ -12,7 +12,7 @@ rm(list = ls())
 
 # --------------------------------------------------- GENERAL NOTES --------------------------------------------------------
 # 1. Use docstring("insert function name") to view function documentation and information.
-# 2. Github documentation for this model can be found at https://github.com/paulcarvalho/faf_gear_restrictions_paper/blob/main/gear_reef_fisheries_model.R
+# 2. Github documentation for this model can be found at https://github.com/paulcarvalho/faf_gear_restrictions_paper
 
 # --------------------------------------------------- LIBRARIES and DATA ---------------------------------------------------
 library(readxl)
